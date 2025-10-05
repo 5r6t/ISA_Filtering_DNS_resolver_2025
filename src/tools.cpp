@@ -23,7 +23,8 @@ int catch_stoi(const std::string &str, const int max_val, const std::string &var
             throw std::out_of_range("Invalid range");
         return val;
     } catch (...) {
-        printf_debug("Error: %s must be in range <0,%d>", varname.c_str(), max_val);
+        std::cerr << "Error: " << varname <<" must be in range <0,"
+                  << max_val << ">" << "\n";
         exit(ERR_BAD_INPUT);
     }
 }

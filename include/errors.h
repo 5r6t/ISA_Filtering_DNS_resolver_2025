@@ -21,4 +21,3 @@
 #define ERR_DNS_BUILD    21
 
 #define ERR_INTERNAL 99
-

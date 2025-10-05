@@ -8,6 +8,7 @@
  */
 #include "../include/errors.h"
 #include "../include/tools.h"
+#include "../include/sig.h"
 
 #include <iostream>
 #include <cstdint>
@@ -27,10 +28,16 @@ void print_help() {
     << "Examples:\n"
     << "  ./dns -s 8.8.8.8 -f blocklist.txt\n"
     << "  ./dns -s dns.google -p 5300 -f filters.txt -v\n";
-    return;
+    exit(0);
+}
+
+void free_stuff() {
+    printf_debug("Freeing non-existent resources...\n");
 }
 
 int main (int argc, char **argv) {
+    setup_signal_handlers();
+    add_cleanup(free_stuff);
     
     std::string resolver_ip;
     std::string filter_file;
@@ -54,7 +61,7 @@ int main (int argc, char **argv) {
         if(!def.empty()) return def;
 
         printf_debug("Error: Missing argument for %s\n", flag.c_str());
-        (void)flag; // prevent unused-variable warning if DEBUG_PRINT is off
+        (void)flag; // unused-variable
 
         exit(ERR_BAD_INPUT);
     };
@@ -70,7 +77,7 @@ int main (int argc, char **argv) {
                     get_next_arg(i, arg, "53"), std::numeric_limits<uint16_t>::max(),arg);
             (void) port;
         }
-        else if (arg == "f") {
+        else if (arg == "-f") {
             filter_file = get_next_arg(i, arg);
         }
         else if (arg == "-v") {
@@ -84,6 +91,11 @@ int main (int argc, char **argv) {
             // ignore, probably an user typo
         }
     }
-    std::cout << "Finished" << "\n";
+
+    while(!stop_request) {
+        // main loop
+    }
+    graceful_exit();
+    printf_debug("Finished");
     return 0;
 }
