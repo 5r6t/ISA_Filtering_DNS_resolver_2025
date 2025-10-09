@@ -6,3 +6,11 @@
  * @login xmervaj00
  * @date 2025-10-05
  */
+
+#pragma once
+
+#include <string>
+#include <cstdint>
+#include <netinet/in.h>
+
+sockaddr_in resolve_ip(const std::string &host_name, uint16_t port);

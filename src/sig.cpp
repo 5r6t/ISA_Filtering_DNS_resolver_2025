@@ -6,15 +6,14 @@
  * @login xmervaj00
  * @date 2025-10-05
  */
-#include "../include/sig.h"
-#include "../include/errors.h"
-#include "../include/tools.h"
+#include "sig.h"
+#include "errors.h"
+#include "tools.h"
 #include <csignal>
 #include <atomic>
 #include <iostream>
 #include <unistd.h>
 #include <vector>
-
 
 std::atomic<bool>stop_request = false;
 static std::vector<void (*)()> cleanup_functions;
@@ -32,9 +31,8 @@ void add_cleanup(void (*fn)()) {
     cleanup_functions.push_back(fn);
 }
 
-void graceful_exit(int code) {
-    std::cerr << "\nGraceful shutdown...\n";
+void cleanup() {
+    std::cerr << "\nRunning registered cleanup functions...\n";
     for (auto fn : cleanup_functions)
         fn();  // run each registered cleanup
-    exit(code);
 }

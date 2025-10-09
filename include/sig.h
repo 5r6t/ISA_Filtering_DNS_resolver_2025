@@ -20,4 +20,4 @@ void setup_signal_handlers();
 void add_cleanup(void (*fn)());
 
 // Executes all registered cleanup functions and exits with the given code.
-void graceful_exit(int code = 0);
+void cleanup();

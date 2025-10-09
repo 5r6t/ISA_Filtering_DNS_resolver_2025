@@ -6,9 +6,11 @@
  * @login xmervaj00
  * @date 2025-10-04
  */
-#include "../include/errors.h"
-#include "../include/tools.h"
-#include "../include/sig.h"
+#include "errors.h"
+#include "tools.h"
+#include "sig.h"
+#include "resolver.h"
+#include "udp.h"
 
 #include <iostream>
 #include <cstdint>
@@ -39,7 +41,7 @@ int main (int argc, char **argv) {
     setup_signal_handlers();
     add_cleanup(free_stuff);
     
-    std::string resolver_ip;
+    std::string ip_addr;
     std::string filter_file;
     uint16_t port = 53;
     bool verbose = false;
@@ -70,7 +72,8 @@ int main (int argc, char **argv) {
         std::string arg = argv[i];
 
         if (arg == "-s") {
-            resolver_ip = get_next_arg(i, arg);
+            ip_addr = get_next_arg(i, arg);
+            resolve_ip(ip_addr, port);
         }
         else if (arg == "-p") {
             port = catch_stoi(
@@ -92,10 +95,13 @@ int main (int argc, char **argv) {
         }
     }
 
+    int udp_sock = create_udp_socket();
+    bind_udp_socket(udp_sock, port);
     while(!stop_request) {
+    
         // main loop
     }
-    graceful_exit();
-    printf_debug("Finished");
+    cleanup();
+    sock_close(&udp_sock);
     return 0;
 }
