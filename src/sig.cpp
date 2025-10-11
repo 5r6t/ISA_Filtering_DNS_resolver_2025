@@ -8,7 +8,8 @@
  */
 #include "sig.h"
 #include "errors.h"
-#include "tools.h"
+#include "common.h"
+
 #include <csignal>
 #include <atomic>
 #include <iostream>
@@ -20,7 +21,7 @@ static std::vector<void (*)()> cleanup_functions;
 
 void handle_sigint(int) {
     stop_request = true;
-    printf_debug("\nSIGINT deteced, attempting graceful shutdown....\n");
+    printf_debug("SIGINT detected...\n");
 }
 
 void setup_signal_handlers() {

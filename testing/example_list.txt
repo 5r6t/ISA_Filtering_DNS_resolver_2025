@@ -1,6 +1,7 @@
 # available at:
 # https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=1
-
+# must be ascii 
+# 
 101com.com
 180hits.de
 180searchassistant.com

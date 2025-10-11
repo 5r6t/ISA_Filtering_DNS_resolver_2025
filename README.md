@@ -135,3 +135,13 @@
 
 ## Recommended Reading
 - [RFC 1035 – Domain Names](https://datatracker.ietf.org/doc/html/rfc1035)
+
+
+# GOOD TO KNOW
+> ad více dotazů v jedné zprávě DNS: takové zprávy se v praxi nevyskytují, protože není jasná sémantika některých polí v očekávané odpovědi (např. AA, RCODE), vizte atké např. https://stackoverflow.com/questions/4082081/requesting-a-and-aaaa-records-in-single-dns-query/4083071#4083071. Zasílat více dotazů v jedné zprávě při testování nebudu, nicméně v dokumentaci doporučuji vysvětlit, jak se program v takové situaci zachová.
+
+> Ad komprese jmen: Samozřejmě musíte podporovat, jinak vám program v praxi fungovat nebude správně. Komprese jmen je naprosto běžně používaná technika.
+
+# SOURCES
+- dual stack https://stackoverflow.com/questions/22075363/dual-stack-with-one-socket
+- ipv6, sockaddr_storage https://datatracker.ietf.org/doc/html/rfc2553

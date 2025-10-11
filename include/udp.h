@@ -9,6 +9,6 @@
 
  #pragma once
 
-int create_udp_socket();
-void bind_udp_socket(int sock, int port);
+int create_udp_socket(int family);
+void bind_udp_socket(int sock, int port, int family);
 void sock_close(int *sock);

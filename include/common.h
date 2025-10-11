@@ -10,8 +10,10 @@
 #pragma once
 
 #include <string>
+#include <cstdint>
+#include <netinet/in.h>
 
-// THIS DEBUG MACRO HAS BEEN COPPIED FROM
+// THIS DEBUG MACRO HAS BEEN COPIED FROM
 // https://git.fit.vutbr.cz/NESFIT/IPK-Projects/src/branch/master/Project_2#client-logging
 #ifdef DEBUG_PRINT
 #define printf_debug(format, ...) \
@@ -26,6 +28,18 @@
 #else
 #define printf_debug(format, ...) ((void)0)
 #endif
+
+struct Config {
+    uint16_t r_port = 53;
+
+    int sock = -1;
+    bool verbose = false;
+
+    std::string hostname;
+    std::string filter_file;
+
+    sockaddr_storage r_addr{};
+};
 
 // Parses string into int, validates range <0, max_val>
 int catch_stoi(const std::string &str, const int max_val, const std::string &varname);

@@ -8,7 +8,7 @@
  */
 
 #include "resolver.h"
-#include "tools.h"
+#include "common.h"
 #include "errors.h"
 
 #include <iostream>
@@ -19,30 +19,58 @@
 #include <arpa/inet.h>
 #include <netdb.h> // getaddrinfo
 
-sockaddr_in resolve_ip(const std::string &host_name, uint16_t port) {
+/** @note addresses to be printed (e.g. debug) when using dual stack will need to be trimmed */ 
 
-    struct addrinfo hints{}, *result = nullptr; // list of addresses and result of getaddrinfo
+sockaddr_storage resolve_host(const std::string &host_name, uint16_t port) {
+
+    if(host_name.empty()) {
+        std::cerr << "Error: Hostname/IP address is empty.\n";
+        exit(ERR_BAD_INPUT);
+    }
+    
+    struct addrinfo hints{};
+    struct addrinfo *result = nullptr; // list of addrrs and result of getaddrinfo
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;      // IPv4
+    hints.ai_family = AF_UNSPEC;    // IPv4 or IPv6
     hints.ai_socktype = SOCK_DGRAM; // UDP
 
-    if (getaddrinfo(host_name.c_str(), nullptr, &hints, &result) != 0) {
+    int ret = getaddrinfo(host_name.c_str(), nullptr, &hints, &result);
+    if (ret != 0) {
         std::cerr << "ERROR: Unable to resolve domain name: " << host_name << "\n";
         exit(ERR_INTERNAL);
     }
 
-    // first AF_INET address is kept
-    struct sockaddr_in addr{};
+    struct sockaddr_storage addr{};
+    int family = AF_UNSPEC;
+
+    // first address found is kept
     for (auto next = result; next != nullptr; next = next->ai_next) {
         if (next->ai_family == AF_INET) {
-            addr = *reinterpret_cast<sockaddr_in*>(next->ai_addr);
-            addr.sin_port = htons(port); // add port
-            break; // Found address
+            addr = *reinterpret_cast<sockaddr_storage*>(next->ai_addr);
+            reinterpret_cast<sockaddr_in*>(&addr)->sin_port = htons(port);
+            family = AF_INET;
+            break; // found address
+        } else if (next->ai_family == AF_INET6) {
+            addr = *reinterpret_cast<sockaddr_storage*>(next->ai_addr);
+            reinterpret_cast<sockaddr_in6*>(&addr)->sin6_port = htons(port);
+            family = AF_INET6;
+            break; // found address
         }
     }
-    char ip_buf[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &addr.sin_addr, ip_buf, sizeof(ip_buf));
-    printf_debug("Resolved %s -> %s:%d", host_name.c_str(), ip_buf, ntohs(addr.sin_port));
+    if (family == AF_UNSPEC) {
+        std::cerr << "ERROR: No valid IPv4/IPv6 address found for: " << host_name << "\n";
+        freeaddrinfo(result);
+        exit(ERR_INTERNAL);
+    }
+
+    // debug
+    char buf[INET6_ADDRSTRLEN];
+    void *src = (family == AF_INET) 
+       ? reinterpret_cast<void*>(&reinterpret_cast<sockaddr_in*>(&addr)->sin_addr)
+       : reinterpret_cast<void*>(&reinterpret_cast<sockaddr_in6*>(&addr)->sin6_addr);
+    inet_ntop(family, src, buf, sizeof(buf));
+    printf_debug("Resolved %s -> %s:%d", host_name.c_str(), buf, port);
+    
     freeaddrinfo(result);
 
     return addr; // return address 

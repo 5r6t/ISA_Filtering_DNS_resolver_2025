@@ -7,10 +7,11 @@
  * @date 2025-10-04
  */
 #include "errors.h"
-#include "tools.h"
+#include "common.h"
 #include "sig.h"
 #include "resolver.h"
 #include "udp.h"
+#include "filter.h"
 
 #include <iostream>
 #include <cstdint>
@@ -20,11 +21,11 @@
 
 void print_help() {
     std::cout << "Filtering DNS resolver - forwards DNS A-type queries except those blocked by list.\n\n";
-    std::cout << "Usage: ./dns -s <hostname|ip> [-p port] [-f filter_file] [-v] [-h]\n\n"
+    std::cout << "Usage: ./dns -s <hostname|ip> [-p port] -f <filter_file> [-v] [-h]\n\n"
     << "Options:\n"
     << "  -s <server>    Set resolver IP address or hostname. Required.\n"
+    << "  -f <file>      File with blocked domains. Required.\n"
     << "  -p <port>      Listening port (default: 53).\n"
-    << "  -f <file>      File with blocked domains.\n"
     << "  -v             Enable verbose logging. \n"
     << "  -h             Show this help message and exit.\n\n"
     << "Examples:\n"
@@ -37,14 +38,29 @@ void free_stuff() {
     printf_debug("Freeing non-existent resources...\n");
 }
 
+void runtime(Config &cfg) {
+    // main runtime loop
+    int family = cfg.r_addr.ss_family;
+    cfg.sock = create_udp_socket(family);
+    bind_udp_socket(cfg.sock, cfg.r_port, family);
+
+    std::string line = "          ";
+    normalize(line);
+    if (is_skippable(line)) printf_debug("Skipped");
+    else printf_debug("%s|\n", line.c_str());
+
+    while(!stop_request) {
+        // main loop
+
+    }
+    sock_close(&cfg.sock);
+}
+
+
 int main (int argc, char **argv) {
+    Config cfg;
     setup_signal_handlers();
     add_cleanup(free_stuff);
-    
-    std::string ip_addr;
-    std::string filter_file;
-    uint16_t port = 53;
-    bool verbose = false;
 
     std::set<std::string> arg_flags =  {
         "-s", // DNS resolver address
@@ -53,17 +69,17 @@ int main (int argc, char **argv) {
         "-v", // verbose logging
         "-h"  // prints help
     };
-
+    
+    // lambda function to get next argument
     auto get_next_arg = [&](int &i, const std::string &flag, const std::string &def="") 
     -> std::string {
+
         if (i + 1 < argc && !arg_flags.contains(argv[i+1]))  {
             return argv[++i];
         }
 
         if(!def.empty()) return def;
-
-        printf_debug("Error: Missing argument for %s\n", flag.c_str());
-        (void)flag; // unused-variable
+        std::cerr << "Error: Missing argument for" << flag << "\n";
 
         exit(ERR_BAD_INPUT);
     };
@@ -72,20 +88,18 @@ int main (int argc, char **argv) {
         std::string arg = argv[i];
 
         if (arg == "-s") {
-            ip_addr = get_next_arg(i, arg);
-            resolve_ip(ip_addr, port);
+            cfg.hostname = get_next_arg(i, arg);
         }
         else if (arg == "-p") {
-            port = catch_stoi(
-                    get_next_arg(i, arg, "53"), std::numeric_limits<uint16_t>::max(),arg);
-            (void) port;
+            int maxval = std::numeric_limits<uint16_t>::max();
+            cfg.r_port = catch_stoi(
+                    get_next_arg(i, arg, "53"), maxval ,arg);
         }
         else if (arg == "-f") {
-            filter_file = get_next_arg(i, arg);
+            cfg.filter_file = get_next_arg(i, arg);
         }
         else if (arg == "-v") {
-            verbose = true;
-            (void) verbose;
+            cfg.verbose = true;
         }
         else if (arg == "-h") {
             print_help();
@@ -94,14 +108,11 @@ int main (int argc, char **argv) {
             // ignore, probably an user typo
         }
     }
+    cfg.r_addr = resolve_host(cfg.hostname, cfg.r_port);
+    // similarly, filter file function will error out if file is bad/missing
 
-    int udp_sock = create_udp_socket();
-    bind_udp_socket(udp_sock, port);
-    while(!stop_request) {
-    
-        // main loop
-    }
+    runtime(cfg);
+
     cleanup();
-    sock_close(&udp_sock);
     return 0;
 }
