@@ -13,4 +13,5 @@
 
 void normalize (std::string &line);   // remove after testing
 bool is_skippable (std::string line); // remove after testing 
+bool is_blocked (std::unordered_set<std::string>& blocklist, std::string& domain);
 std::unordered_set<std::string> filter_load(std::string filter_file);

@@ -15,21 +15,32 @@
 #include <fstream>
 #include <unordered_set>
 
+#define ASCII_MAX 127
 // lowercase string conversion adapted from:
 // https://stackoverflow.com/a/313990
 void normalize (std::string &line) {
     std::transform(line.begin(), line.end(), line.begin(),
         [](unsigned char c){ return std::tolower(c); });
-    // careful about trimming empty lines -- is_skippable()
+    // careful about trimming empty lines -- is_skippable() called before
     line.erase(0, line.find_first_not_of(" \t\r\n")); // left
     line.erase(line.find_last_not_of(" \t\r\n") + 1); // right
 }
 
 bool is_valid_domain (std::string line) {
-    
-    printf_debug("%s", line.c_str());
-    (void)line;
-    return 1;
+    if (line.empty()) return false;
+    if (line.front() == '.' || line.front() == '-' ||
+        line.back() == '.' || line.back() == '-')
+        return false;
+
+    if (line.find("..") != std::string::npos) return false;
+
+    bool has_dot = false;
+    for (unsigned char c : line) {
+        if (c > ASCII_MAX) return false;
+        if (c == '.') has_dot = true;
+        else if (!std::isalnum(c) && c != '-') return false;
+    }
+    return has_dot;
 }
 
 bool is_skippable(std::string line) {
@@ -49,20 +60,42 @@ std::unordered_set<std::string> filter_load(std::string filter_file)
     std::string line;
 
     while (std::getline(file, line)) {
-        // sort and fix and clear up name
         if (is_skippable(line)) 
             continue;
 
         normalize(line);
 
         if (!is_valid_domain(line)) {
-            ;
+            std::cerr << "Invalid address found, skipping: " << line << "\n";       
+            continue;
         }
         blocked.insert(line);
-        
     }
-
     file.close();
     printf_debug("Filter list updated");
     return blocked;
+}
+
+
+bool is_blocked(std::unordered_set<std::string>&blocklist, std::string &domain) {
+    if (!is_valid_domain) {
+        printf_debug("Provided domain was invalid");
+        return false;
+    }
+    // get rid of trailing dot 
+    if (domain.back() == '.') domain.pop_back();
+    // normalize to compare agaisnt the list
+    normalize(domain);
+    // domain matches the blocklisted domain exactly
+    if (blocklist.contains(domain)) return true;
+    // subdomain search
+    size_t pos = domain.find('.');
+    while (pos != std::string::npos) {
+        std::string suffix = domain.substr(pos + 1);
+        // found match
+        if (blocklist.count(suffix)) return true;
+        
+        pos = domain.find('.', pos +1);
+    }
+    return false; // match not found
 }

@@ -44,10 +44,7 @@ void runtime(Config &cfg) {
     cfg.sock = create_udp_socket(family);
     bind_udp_socket(cfg.sock, cfg.r_port, family);
 
-    std::string line = "          ";
-    normalize(line);
-    if (is_skippable(line)) printf_debug("Skipped");
-    else printf_debug("%s|\n", line.c_str());
+    std::unordered_set<std::string> blocklist = filter_load(cfg.filter_file);
 
     while(!stop_request) {
         // main loop
@@ -109,7 +106,6 @@ int main (int argc, char **argv) {
         }
     }
     cfg.r_addr = resolve_host(cfg.hostname, cfg.r_port);
-    // similarly, filter file function will error out if file is bad/missing
 
     runtime(cfg);
 

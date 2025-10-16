@@ -2,6 +2,20 @@
 # https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=1
 # must be ascii 
 # 
+
+# deliberately a set of bad ones
+notadomain          # 1 no dot
+example..com        # 2 double dot
+.hidden.com         # 3 leading dot
+bad_domain.com      # 4 underscore not allowed
+com.                # 5 trailing dot
+256.300.1.1         # 6 looks like an IP but invalid format
+http://site.com     # 7 includes scheme
+site.com/path       # 8 includes path
+ad*.example.com     # 9 invalid character
+äddomain.cz         # 10 non-ASCII (without punycode)
+ad*.example.com 
+
 101com.com
 180hits.de
 180searchassistant.com

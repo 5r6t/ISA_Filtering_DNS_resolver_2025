@@ -38,7 +38,7 @@ $(OBJ_DIR):
 
 # --- Utility targets ---
 run: $(TARGET)
-	./$(TARGET)
+	sudo ./$(TARGET) -s 8.8.8.8 -p 1053 -f testing/example_list.txt
 
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
