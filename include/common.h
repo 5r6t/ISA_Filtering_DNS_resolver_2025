@@ -29,10 +29,13 @@
 #define printf_debug(format, ...) ((void)0)
 #endif
 
-struct Config {
-    uint16_t r_port = 53;
+#define DNS_MAX_BYTES 512
 
-    int sock = -1;
+struct Config {
+    uint16_t loc_port = 53;
+
+    int sock_local = -1;
+    int sock_upstream = -1;
     bool verbose = false;
 
     std::string hostname;

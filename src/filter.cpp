@@ -78,7 +78,7 @@ std::unordered_set<std::string> filter_load(std::string filter_file)
 
 
 bool is_blocked(std::unordered_set<std::string>&blocklist, std::string &domain) {
-    if (!is_valid_domain) {
+    if (!is_valid_domain(domain)) {
         printf_debug("Provided domain was invalid");
         return false;
     }

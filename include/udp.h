@@ -8,7 +8,9 @@
  */
 
  #pragma once
+ 
+#include <initializer_list>
 
 int create_udp_socket(int family);
 void bind_udp_socket(int sock, int port, int family);
-void sock_close(int *sock);
+void sock_close(std::initializer_list<int*> socks);

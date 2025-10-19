@@ -13,15 +13,18 @@
 
 #include <iostream>
 #include <cstring>
+#include <initializer_list>
 
 #include <netinet/in.h>
 #include <unistd.h>
 
 
-void sock_close(int *sock) {
-    if (*sock != -1) {
-        close(*sock);
-        *sock = -1;
+void sock_close(std::initializer_list<int*> socks) {
+    for (int* sock : socks) {
+        if (sock && *sock != -1) {
+            close(*sock);
+            *sock = -1;
+        }
     }
 }
 

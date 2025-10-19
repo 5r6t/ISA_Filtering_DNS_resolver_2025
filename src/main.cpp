@@ -19,6 +19,7 @@
 #include <limits>
 #include <set>
 
+
 void print_help() {
     std::cout << "Filtering DNS resolver - forwards DNS A-type queries except those blocked by list.\n\n";
     std::cout << "Usage: ./dns -s <hostname|ip> [-p port] -f <filter_file> [-v] [-h]\n\n"
@@ -41,22 +42,55 @@ void free_stuff() {
 void runtime(Config &cfg) {
     // main runtime loop
     int family = cfg.r_addr.ss_family;
-    cfg.sock = create_udp_socket(family);
-    bind_udp_socket(cfg.sock, cfg.r_port, family);
+    cfg.sock_local = create_udp_socket(family);
+    cfg.sock_upstream = create_udp_socket(family);
+    // bind just the local socket
+    bind_udp_socket(cfg.sock_local, cfg.loc_port, family);
 
     std::unordered_set<std::string> blocklist = filter_load(cfg.filter_file);
 
+    fd_set readfds; // set of file descriptors
+    setup_signal_handlers();
+    
+    printf_debug("Listening on port %d, upstream \"%s\" socket ready", cfg.loc_port, cfg.hostname.c_str());
+    // main loop
     while(!stop_request) {
-        // main loop
+        // clear file descriptor set
+        FD_ZERO(&readfds); 
+        FD_SET(cfg.sock_local, &readfds);
+        FD_SET(cfg.sock_upstream, &readfds);
+        // calculate file descriptor with highest num
+        int max_fd = std::max(cfg.sock_local, cfg.sock_upstream); 
+        int ready = select(max_fd+1, &readfds, NULL, NULL, NULL);
+
+        if (ready < 0) {
+            perror("Select");
+            break;
+        }
+
+        // Received packet from client
+        if (FD_ISSET(cfg.sock_local, &readfds)) {
+            sockaddr_storage src{};
+            socklen_t slen = sizeof(src);
+            uint8_t buf[DNS_MAX_BYTES];
+            ssize_t n = recvfrom(cfg.sock_local, buf, sizeof(buf), 0,
+                                (sockaddr*)&src, &slen);
+            if (n > 0)
+                printf_debug("QUERY FROM CLIENT (%zd bytes)", n);
+        } // client
+
+        // Received reply from upstream resolver
+        if (FD_ISSET(cfg.sock_upstream, &readfds)) {
+            printf_debug("REPLY FROM UPSTREAM");
+        } // upstream
 
     }
-    sock_close(&cfg.sock);
+    sock_close({&cfg.sock_local, &cfg.sock_upstream});
 }
 
 
 int main (int argc, char **argv) {
     Config cfg;
-    setup_signal_handlers();
     add_cleanup(free_stuff);
 
     std::set<std::string> arg_flags =  {
@@ -89,7 +123,7 @@ int main (int argc, char **argv) {
         }
         else if (arg == "-p") {
             int maxval = std::numeric_limits<uint16_t>::max();
-            cfg.r_port = catch_stoi(
+            cfg.loc_port = catch_stoi(
                     get_next_arg(i, arg, "53"), maxval ,arg);
         }
         else if (arg == "-f") {
@@ -105,7 +139,7 @@ int main (int argc, char **argv) {
             // ignore, probably an user typo
         }
     }
-    cfg.r_addr = resolve_host(cfg.hostname, cfg.r_port);
+    cfg.r_addr = resolve_host(cfg.hostname, cfg.loc_port);
 
     runtime(cfg);
 
