@@ -145,3 +145,4 @@
 # SOURCES
 - dual stack https://stackoverflow.com/questions/22075363/dual-stack-with-one-socket
 - ipv6, sockaddr_storage https://datatracker.ietf.org/doc/html/rfc2553
+- DNS https://mislove.org/teaching/cs4700/spring11/handouts/project1-primer.pdf

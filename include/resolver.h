@@ -10,7 +10,6 @@
 #pragma once
 
 #include <string>
-#include <cstdint>
 #include <netinet/in.h>
 
 sockaddr_storage resolve_host(const std::string &host_name, uint16_t port);

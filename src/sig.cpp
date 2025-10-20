@@ -17,7 +17,6 @@
 #include <vector>
 
 std::atomic<bool>stop_request = false;
-static std::vector<void (*)()> cleanup_functions;
 
 void handle_sigint(int) {
     stop_request = true;
@@ -26,14 +25,4 @@ void handle_sigint(int) {
 
 void setup_signal_handlers() {
     std::signal(SIGINT, handle_sigint);
-}
-
-void add_cleanup(void (*fn)()) {
-    cleanup_functions.push_back(fn);
-}
-
-void cleanup() {
-    std::cerr << "\nRunning registered cleanup functions...\n";
-    for (auto fn : cleanup_functions)
-        fn();  // run each registered cleanup
 }

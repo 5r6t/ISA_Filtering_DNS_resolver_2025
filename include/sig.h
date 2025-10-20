@@ -14,10 +14,3 @@ extern std::atomic<bool> stop_request;
 
 // Register the SIGINT handler.
 void setup_signal_handlers();
-
-// Add a cleanup function to be execute on graceful exit.
-// Each function must have signature: void func(void)
-void add_cleanup(void (*fn)());
-
-// Executes all registered cleanup functions and exits with the given code.
-void cleanup();

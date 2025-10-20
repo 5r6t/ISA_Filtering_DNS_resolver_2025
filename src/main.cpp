@@ -19,6 +19,10 @@
 #include <limits>
 #include <set>
 
+#define WAITTIME_S 5
+#define WAITTIME_U 0
+
+Config cfg;
 
 void print_help() {
     std::cout << "Filtering DNS resolver - forwards DNS A-type queries except those blocked by list.\n\n";
@@ -35,11 +39,7 @@ void print_help() {
     exit(0);
 }
 
-void free_stuff() {
-    printf_debug("Freeing non-existent resources...\n");
-}
-
-void runtime(Config &cfg) {
+void runtime() {
     // main runtime loop
     int family = cfg.r_addr.ss_family;
     cfg.sock_local = create_udp_socket(family);
@@ -52,6 +52,9 @@ void runtime(Config &cfg) {
     fd_set readfds; // set of file descriptors
     setup_signal_handlers();
     
+    
+
+
     printf_debug("Listening on port %d, upstream \"%s\" socket ready", cfg.loc_port, cfg.hostname.c_str());
     // main loop
     while(!stop_request) {
@@ -59,12 +62,19 @@ void runtime(Config &cfg) {
         FD_ZERO(&readfds); 
         FD_SET(cfg.sock_local, &readfds);
         FD_SET(cfg.sock_upstream, &readfds);
+
+        struct timeval timeout;
+        timeout.tv_sec = WAITTIME_S;
+        timeout.tv_usec = WAITTIME_U; 
         // calculate file descriptor with highest num
         int max_fd = std::max(cfg.sock_local, cfg.sock_upstream); 
-        int ready = select(max_fd+1, &readfds, NULL, NULL, NULL);
+        int ready = select(max_fd+1, &readfds, NULL, NULL, &timeout);
 
         if (ready < 0) {
             perror("Select");
+            break;
+        } else if (ready == 0) {
+            printf_debug("Select timed out");
             break;
         }
 
@@ -85,13 +95,15 @@ void runtime(Config &cfg) {
         } // upstream
 
     }
+}
+
+void cleanup() {
     sock_close({&cfg.sock_local, &cfg.sock_upstream});
 }
 
 
 int main (int argc, char **argv) {
-    Config cfg;
-    add_cleanup(free_stuff);
+    atexit(cleanup);
 
     std::set<std::string> arg_flags =  {
         "-s", // DNS resolver address
@@ -141,8 +153,7 @@ int main (int argc, char **argv) {
     }
     cfg.r_addr = resolve_host(cfg.hostname, cfg.loc_port);
 
-    runtime(cfg);
+    runtime();
 
-    cleanup();
     return 0;
 }

@@ -13,10 +13,13 @@
 
 #include <iostream>
 #include <cstring>
+#include <cstdint>
 #include <initializer_list>
+#include <vector>
 
 #include <netinet/in.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 
 void sock_close(std::initializer_list<int*> socks) {
@@ -36,6 +39,11 @@ int create_udp_socket(int family)
         std::cerr << "ERROR: Cannot create socket.\n";
         exit(ERR_INTERNAL);
     }
+
+    // make sockets non-blocking
+    int yes = 1;
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+    setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
 
     if (family == AF_INET6) {
         int off = 0; // allow both v4 and v6

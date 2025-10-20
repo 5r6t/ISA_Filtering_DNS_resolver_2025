@@ -11,6 +11,8 @@
 
 #include <string>
 #include <cstdint>
+#include <vector>
+
 #include <netinet/in.h>
 
 // THIS DEBUG MACRO HAS BEEN COPIED FROM
@@ -46,3 +48,4 @@ struct Config {
 
 // Parses string into int, validates range <0, max_val>
 int catch_stoi(const std::string &str, const int max_val, const std::string &varname);
+bool read_dns_name(const std::vector<uint8_t>&buf, size_t& offset, std::string& out, int depth=0);

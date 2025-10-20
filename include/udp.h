@@ -10,7 +10,10 @@
  #pragma once
  
 #include <initializer_list>
+#include <vector>
+#include <cstdint>
 
 int create_udp_socket(int family);
 void bind_udp_socket(int sock, int port, int family);
 void sock_close(std::initializer_list<int*> socks);
+std::vector<uint8_t> udp_receive(); // not implemented
