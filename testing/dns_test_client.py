@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
-# WARNING USE ON YOUR OWN DISCRETION == AI GENERATED !!! 
+# WARNING USE AT YOUR OWN DISCRETION == AI GENERATED !!! 
 
 # Minimal DNS UDP client (no external libs). Usage:
 # python3 dns_test_client.py <host> <port> <domain>
 
 import sys, socket, struct, random
+
+RESP_TIMEOUT = 5000.0
+
 
 def build_query(domain: str) -> bytes:
     # Header: ID, Flags, QDCOUNT, ANCOUNT, NSCOUNT, ARCOUNT
@@ -34,7 +37,7 @@ def main():
 
     packet, tid = build_query(domain)
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.settimeout(2.0)
+    s.settimeout(RESP_TIMEOUT)
     try:
         s.sendto(packet, (host, port_s))
         data, addr = s.recvfrom(4096)

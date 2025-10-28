@@ -31,8 +31,6 @@
 #define printf_debug(format, ...) ((void)0)
 #endif
 
-#define DNS_MAX_BYTES 512
-
 struct Config {
     uint16_t loc_port = 53;
 
@@ -46,6 +44,9 @@ struct Config {
     sockaddr_storage r_addr{};
 };
 
-// Parses string into int, validates range <0, max_val>
 int catch_stoi(const std::string &str, const int max_val, const std::string &varname);
-bool read_dns_name(const std::vector<uint8_t>&buf, size_t& offset, std::string& out, int depth=0);
+void append_u8(std::vector<uint8_t>& buf, uint8_t value);
+void append_u16(std::vector<uint8_t>& buf, uint16_t value);
+void append_u32(std::vector<uint8_t>& buf, uint32_t value);
+void append_dns_name(std::vector<uint8_t>& buf, const std::string& domain);
+uint16_t read_u16(const std::vector<uint8_t>& buf, size_t offset);

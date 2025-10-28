@@ -11,11 +11,7 @@
 
 #include <cstdint>
 #include <string>
-
-struct DnsMsg {
-    DnsHead header;
-    DnsQue question;
-};
+#include <vector>
 
 // header has 12 bytes
 struct DnsHead
@@ -30,6 +26,18 @@ struct DnsHead
 struct DnsQue
 {
     std::string qname;
-    uint16_t qtype; // 0x0001 host addr
-    uint16_t qclass; // 0x00001 desired
+    uint16_t qtype; // 0x01 host addr
+    uint16_t qclass; // 0x0001 desired
 };
+
+struct DnsMsg {
+    DnsHead head;
+    DnsQue que;
+};
+
+bool read_dns_name(const std::vector<uint8_t>&buf, size_t& offset, std::string& out, 
+                    size_t depth=0);
+bool read_u16_advance(const std::vector<uint8_t>&buf, size_t& offset, uint16_t& out);
+bool parse_dns(const std::vector<uint8_t> &msg, DnsMsg &out);
+bool is_A_query(uint16_t qtype);
+bool is_error(uint16_t flags);

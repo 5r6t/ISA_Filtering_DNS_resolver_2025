@@ -13,7 +13,16 @@
 #include <vector>
 #include <cstdint>
 
+#include <netinet/in.h>
+
+struct UdpPacket {
+    std::vector<uint8_t> data;
+    sockaddr_storage src;
+    socklen_t len;
+};
+
 int create_udp_socket(int family);
 void bind_udp_socket(int sock, int port, int family);
 void sock_close(std::initializer_list<int*> socks);
-std::vector<uint8_t> udp_receive(); // not implemented
+UdpPacket udp_receive(const int sock);
+void udp_send (const int sock, const std::vector<uint8_t>& data, const sockaddr_storage& addr);

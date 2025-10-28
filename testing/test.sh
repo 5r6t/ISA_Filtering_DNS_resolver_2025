@@ -17,7 +17,7 @@ echo ">>> Test start >>>"
 cd ..
 
 # make clean && make DEBUG=1
-
+./dns -s $RES_ADDR -f testing/example_list.txt -p $PORT &
 # start dns in background, log to /tmp/dns.log
 ./dns -s $RES_ADDR -f testing/example_list.txt -p $PORT &
 DNS_PID=$!

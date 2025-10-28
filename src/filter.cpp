@@ -14,12 +14,13 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_set>
+#include <ranges>
 
-#define ASCII_MAX 127
+constexpr int ASCII_MAX = 127;
 // lowercase string conversion adapted from:
 // https://stackoverflow.com/a/313990
 void normalize (std::string &line) {
-    std::transform(line.begin(), line.end(), line.begin(),
+    std::ranges::transform(line, line.begin(),
         [](unsigned char c){ return std::tolower(c); });
     // careful about trimming empty lines -- is_skippable() called before
     line.erase(0, line.find_first_not_of(" \t\r\n")); // left
@@ -47,7 +48,7 @@ bool is_skippable(std::string line) {
     return line.empty() || line[0] == '#';
 }
 
-std::unordered_set<std::string> filter_load(std::string filter_file) 
+std::unordered_set<std::string> filter_load(const std::string& filter_file) 
 {
     std::ifstream file(filter_file);
 
@@ -76,7 +77,7 @@ std::unordered_set<std::string> filter_load(std::string filter_file)
     return blocked;
 }
 
-bool is_blocked(std::unordered_set<std::string>&blocklist, std::string &domain) {
+bool is_blocked(const std::unordered_set<std::string>&blocklist, std::string &domain) {
     if (!is_valid_domain(domain)) {
         printf_debug("Provided domain was invalid");
         return false;
@@ -86,15 +87,20 @@ bool is_blocked(std::unordered_set<std::string>&blocklist, std::string &domain) 
     // normalize to compare agaisnt the list
     normalize(domain);
     // domain matches the blocklisted domain exactly
-    if (blocklist.contains(domain)) return true;
+    if (blocklist.contains(domain)) {
+        printf_debug(" %s is blocked.", domain.c_str());
+        return true;
+    }
     // subdomain search
     size_t pos = domain.find('.');
     while (pos != std::string::npos) {
-        std::string suffix = domain.substr(pos + 1);
-        // found match
-        if (blocklist.count(suffix)) return true;
-        
+    // found match/suffix
+        if (blocklist.contains(domain.substr(pos + 1))) {
+            printf_debug(" %s is blocked.", domain.c_str());
+            return true;
+        }
         pos = domain.find('.', pos +1);
     }
+    printf_debug(" %s is allowed.", domain.c_str());
     return false; // match not found
 }

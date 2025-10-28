@@ -12,19 +12,23 @@
 #include "resolver.h"
 #include "udp.h"
 #include "filter.h"
+#include "dns_parser.h"
 
 #include <iostream>
 #include <cstdint>
 #include <string>
 #include <limits>
 #include <set>
+#include <arpa/inet.h>
+#include <cstdint>
+#include <unordered_map>
 
-#define WAITTIME_S 5
-#define WAITTIME_U 0
+constexpr int WAITTIME_S = 5; // time to drop old entries
+constexpr int WAITTIME_U = 0;
 
 Config cfg;
 
-void print_help() {
+[[noreturn]] void print_help() {
     std::cout << "Filtering DNS resolver - forwards DNS A-type queries except those blocked by list.\n\n";
     std::cout << "Usage: ./dns -s <hostname|ip> [-p port] -f <filter_file> [-v] [-h]\n\n"
     << "Options:\n"
@@ -39,6 +43,57 @@ void print_help() {
     exit(0);
 }
 
+void handle_client(const std::unordered_set<std::string> &blocklist,
+                     std::unordered_map<uint16_t, sockaddr_storage> &table,
+                     const UdpPacket &pkt)
+{
+    DnsMsg dmsg{};
+    if ( !parse_dns(pkt.data, dmsg)) {
+        // build error
+    }
+    // handling
+    else if ( !is_A_query(dmsg.que.qtype)) {
+         // build error
+    }
+    else if (is_blocked(blocklist, dmsg.que.qname)) {
+        // build error
+    }
+    else {
+        table[dmsg.head.id] = pkt.src; // store for later
+        printf_debug("Stored mapping id=%u", dmsg.head.id);
+        udp_send(cfg.sock_upstream, pkt.data, cfg.r_addr);
+    }
+}
+
+void handle_upstream(std::unordered_map<uint16_t, sockaddr_storage> &table,
+                     const UdpPacket &pkt)
+{
+    DnsMsg dmsg{};
+    parse_dns(pkt.data, dmsg);
+
+    // handling
+    auto it = table.find(dmsg.head.id);
+    if (it != table.end()) 
+    {   
+        if (is_A_query(dmsg.que.qtype)) 
+        {
+            printf_debug("Forwarding reply id=%u to client", dmsg.head.id);
+            udp_send(cfg.sock_local, pkt.data, it->second);
+            
+        } 
+        else
+        {
+            printf_debug("Sending error id=%u to client", dmsg.head.id);
+            // send error
+        }
+        table.erase(it); // clear the record
+    } 
+    else 
+    {
+        printf_debug("No mapping found for id=%u (reply dropped)", dmsg.head.id);
+                }
+}
+
 void runtime() {
     // main runtime loop
     int family = cfg.r_addr.ss_family;
@@ -46,55 +101,58 @@ void runtime() {
     cfg.sock_upstream = create_udp_socket(family);
     // bind just the local socket
     bind_udp_socket(cfg.sock_local, cfg.loc_port, family);
-
+    
     std::unordered_set<std::string> blocklist = filter_load(cfg.filter_file);
+    std::unordered_map<uint16_t, sockaddr_storage> table;
 
     fd_set readfds; // set of file descriptors
     setup_signal_handlers();
     
-    
-
-
     printf_debug("Listening on port %d, upstream \"%s\" socket ready", cfg.loc_port, cfg.hostname.c_str());
-    // main loop
-    while(!stop_request) {
-        // clear file descriptor set
+
+    while( !stop_request) {
+        // clear file descriptor set, set descriptors
         FD_ZERO(&readfds); 
         FD_SET(cfg.sock_local, &readfds);
         FD_SET(cfg.sock_upstream, &readfds);
 
-        struct timeval timeout;
-        timeout.tv_sec = WAITTIME_S;
-        timeout.tv_usec = WAITTIME_U; 
-        // calculate file descriptor with highest num
-        int max_fd = std::max(cfg.sock_local, cfg.sock_upstream); 
-        int ready = select(max_fd+1, &readfds, NULL, NULL, &timeout);
+        struct timeval timeout { WAITTIME_S, WAITTIME_U }; 
 
-        if (ready < 0) {
+        int max_fd = std::max(cfg.sock_local, cfg.sock_upstream);
+        int ready = select(max_fd+1, &readfds, nullptr, nullptr, &timeout);
+
+        if (ready < 0) 
+        {
             perror("Select");
-            break;
-        } else if (ready == 0) {
-            printf_debug("Select timed out");
             break;
         }
 
-        // Received packet from client
-        if (FD_ISSET(cfg.sock_local, &readfds)) {
-            sockaddr_storage src{};
-            socklen_t slen = sizeof(src);
-            uint8_t buf[DNS_MAX_BYTES];
-            ssize_t n = recvfrom(cfg.sock_local, buf, sizeof(buf), 0,
-                                (sockaddr*)&src, &slen);
-            if (n > 0)
-                printf_debug("QUERY FROM CLIENT (%zd bytes)", n);
+        if (ready == 0 && !table.empty()) 
+        {
+            printf_debug("Timeout: Query table dropped");
+            table.clear();
+        }
+
+        if (FD_ISSET(cfg.sock_local, &readfds)) 
+        {
+            printf_debug("CLIENT QUERY RECEIVED");
+            UdpPacket pkt = udp_receive(cfg.sock_local);
+            if (!pkt.data.empty())
+            {
+              handle_client(blocklist, table, pkt);  
+            }
         } // client
 
-        // Received reply from upstream resolver
-        if (FD_ISSET(cfg.sock_upstream, &readfds)) {
+        if (FD_ISSET(cfg.sock_upstream, &readfds)) 
+        {
             printf_debug("REPLY FROM UPSTREAM");
+            UdpPacket pkt = udp_receive(cfg.sock_upstream);
+            if (!pkt.data.empty())
+            {
+                handle_upstream(table, pkt);
+            }
         } // upstream
-
-    }
+    } // while
 }
 
 void cleanup() {
@@ -105,7 +163,7 @@ void cleanup() {
 int main (int argc, char **argv) {
     atexit(cleanup);
 
-    std::set<std::string> arg_flags =  {
+    std::set<std::string, std::less<>> arg_flags =  {
         "-s", // DNS resolver address
         "-p", // listening port - default 53
         "-f", // file with blocked domains
@@ -117,13 +175,17 @@ int main (int argc, char **argv) {
     auto get_next_arg = [&](int &i, const std::string &flag, const std::string &def="") 
     -> std::string {
 
-        if (i + 1 < argc && !arg_flags.contains(argv[i+1]))  {
+        const bool has_next = (i + 1 < argc);
+        const bool next_is_flag = has_next && arg_flags.contains(argv[i+1]);
+        
+        if (has_next && !next_is_flag)  {
             return argv[++i];
         }
 
-        if(!def.empty()) return def;
-        std::cerr << "Error: Missing argument for" << flag << "\n";
 
+        if(!def.empty()) return def;
+
+        std::cerr << "Error: Missing argument for" << flag << "\n";
         exit(ERR_BAD_INPUT);
     };
 
@@ -135,8 +197,8 @@ int main (int argc, char **argv) {
         }
         else if (arg == "-p") {
             int maxval = std::numeric_limits<uint16_t>::max();
-            cfg.loc_port = catch_stoi(
-                    get_next_arg(i, arg, "53"), maxval ,arg);
+            cfg.loc_port = static_cast<uint16_t>(catch_stoi(
+                    get_next_arg(i, arg, "53"), maxval ,arg));
         }
         else if (arg == "-f") {
             cfg.filter_file = get_next_arg(i, arg);
@@ -151,8 +213,7 @@ int main (int argc, char **argv) {
             // ignore, probably an user typo
         }
     }
-    cfg.r_addr = resolve_host(cfg.hostname, cfg.loc_port);
-
+    cfg.r_addr = resolve_host(cfg.hostname);
     runtime();
 
     return 0;

@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+constexpr int DNS_UDP_MAX_B = 512;
 
 void sock_close(std::initializer_list<int*> socks) {
     for (int* sock : socks) {
@@ -93,4 +94,47 @@ void bind_udp_socket(int sock, int port, int family)
     }
     printf_debug("Socket bound to port %d (family %s)", port,
                   (family == AF_INET ? "IPv4" : "IPv6"));
+}
+
+UdpPacket udp_receive (const int sock) {
+    UdpPacket pkt{};
+    pkt.data.resize(DNS_UDP_MAX_B);
+    pkt.len = sizeof(pkt.src);
+    
+    ssize_t bytes_rx = recvfrom(sock, pkt.data.data(), pkt.data.size(), 0, 
+                                (sockaddr*)&pkt.src, &pkt.len); // help 
+
+    if (bytes_rx < 0) 
+    {
+        perror("ERROR: recvfrom");
+        return {};
+    }
+
+    pkt.data.resize(bytes_rx); // shrink vector to packet length
+    printf_debug("Received %zd bytes via UDP.", bytes_rx);
+    return pkt;
+}
+
+void udp_send (const int sock, const std::vector<uint8_t>& data, const sockaddr_storage& addr) {
+    
+    socklen_t addrlen = 0;
+
+    if (addr.ss_family == AF_INET)
+        addrlen = sizeof(struct sockaddr_in);
+    else if (addr.ss_family == AF_INET6)
+        addrlen = sizeof(struct sockaddr_in6);
+    else {
+        printf_debug("ERROR: Unsupported address family %d", addr.ss_family);
+        return;
+    }
+
+    int flags = 0;
+
+    ssize_t bytes_tx = sendto(sock, data.data(), data.size(), flags, (sockaddr*)&addr, addrlen);
+    
+    if (bytes_tx < 0) {
+        perror("ERROR: sendto");
+    }
+
+    printf_debug("Sent %zd bytes via UDP", bytes_tx);
 }

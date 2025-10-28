@@ -7,7 +7,7 @@
 
 # --- Compiler & flags ---
 CXX = g++
-CXXFLAGS = -std=c++20 -Wall -Wextra -Werror -pedantic -g
+CXXFLAGS = -std=c++20 -Wall -Wextra -Werror -pedantic -g -O0
 INCLUDES = -Iinclude
 
 # make DEBUG=1
@@ -38,10 +38,13 @@ $(OBJ_DIR):
 
 # --- Utility targets ---
 run: $(TARGET)
-	sudo ./$(TARGET) -s 8.8.8.8 -p 1053 -f testing/example_list.txt
+	sudo ./$(TARGET) -s 8.8.8.8 -p 5300 -f testing/example_list.txt
+
+debug:
+	make clean && make DEBUG=1
 
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
 
 # --- Phony targets ---
-.PHONY: all clean run
+.PHONY: all clean run debug
