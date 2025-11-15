@@ -69,9 +69,21 @@ void append_dns_name(std::vector<uint8_t>& buf, const std::string& domain)
     buf.push_back(0); // end of name
 }
 
-/// @brief Return 2bytes from buffer  
+/// @brief Return 2bytes from buffer
+/// caller is responsible for checking boundaries
 uint16_t read_u16(const std::vector<uint8_t>& buf, size_t offset) 
 {
-    return ((static_cast<uint16_t>(buf[offset] << 8)) | 
+    return ((static_cast<uint16_t>(buf[offset]) << 8) | 
             static_cast<uint16_t>(buf[offset+1]));
+}
+
+/// @brief Return 4bytes from buffer
+/// caller is responsible for checking boundaries
+uint32_t read_u32(const std::vector<uint8_t>& buf, size_t offset)
+{
+    uint32_t res = 0;
+    for (size_t i = 0; i < sizeof(uint32_t); i++) {
+        res = (res << 8) | static_cast<uint32_t>(buf[offset+i]);
+    }
+    return res;
 }

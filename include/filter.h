@@ -7,9 +7,9 @@
  * @date 2025-10-05
  */
 
- #pragma once
- #include <string>
- #include <unordered_set>
+#pragma once
+#include <string>
+#include <unordered_set>
 
 void normalize (std::string &line);   // remove after testing
 bool is_skippable (std::string line); // remove after testing 

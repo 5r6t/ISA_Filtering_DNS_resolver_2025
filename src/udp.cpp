@@ -93,7 +93,7 @@ void bind_udp_socket(int sock, int port, int family)
         exit(ERR_INTERNAL);
     }
     printf_debug("Socket bound to port %d (family %s)", port,
-                  (family == AF_INET ? "IPv4" : "IPv6"));
+                    (family == AF_INET ? "IPv4" : "IPv6"));
 }
 
 UdpPacket udp_receive (const int sock) {

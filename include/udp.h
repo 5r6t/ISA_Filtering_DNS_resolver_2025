@@ -7,8 +7,8 @@
  * @date 2025-10-05
  */
 
- #pragma once
- 
+#pragma once
+
 #include <initializer_list>
 #include <vector>
 #include <cstdint>

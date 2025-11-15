@@ -25,6 +25,7 @@
 
 constexpr int WAITTIME_S = 5; // time to drop old entries
 constexpr int WAITTIME_U = 0;
+using enum DNSError;
 
 Config cfg;
 
@@ -44,19 +45,23 @@ Config cfg;
 }
 
 void handle_client(const std::unordered_set<std::string> &blocklist,
-                     std::unordered_map<uint16_t, sockaddr_storage> &table,
-                     const UdpPacket &pkt)
+                    std::unordered_map<uint16_t, sockaddr_storage> &table,
+                    const UdpPacket &pkt)
 {
     DnsMsg dmsg{};
-    if ( !parse_dns(pkt.data, dmsg)) {
-        // build error
+    size_t offset = 0;
+    if ( !parse_dns_q(pkt.data, dmsg, offset)) {
+        auto response = build_error(dmsg, FORMAT_ERR);
+        udp_send(cfg.sock_local, response, pkt.src); 
     }
     // handling
     else if ( !is_A_query(dmsg.que.qtype)) {
-         // build error
+        auto response = build_error(dmsg, NOT_IMPLEM_ERR);
+        udp_send(cfg.sock_local, response, pkt.src);
     }
     else if (is_blocked(blocklist, dmsg.que.qname)) {
-        // build error
+        auto response = build_error(dmsg, REFUSED_ERR);
+        udp_send(cfg.sock_local, response, pkt.src); 
     }
     else {
         table[dmsg.head.id] = pkt.src; // store for later
@@ -65,37 +70,30 @@ void handle_client(const std::unordered_set<std::string> &blocklist,
     }
 }
 
+// assumes queries from upstream resolver are correct
 void handle_upstream(std::unordered_map<uint16_t, sockaddr_storage> &table,
-                     const UdpPacket &pkt)
+                        const UdpPacket &pkt)
 {
     DnsMsg dmsg{};
-    parse_dns(pkt.data, dmsg);
+    size_t offset = 0;
+    parse_dns_q(pkt.data, dmsg, offset);
+    parse_dns_a(pkt.data, dmsg, offset);
 
-    // handling
     auto it = table.find(dmsg.head.id);
-    if (it != table.end()) 
-    {   
-        if (is_A_query(dmsg.que.qtype)) 
-        {
-            printf_debug("Forwarding reply id=%u to client", dmsg.head.id);
-            udp_send(cfg.sock_local, pkt.data, it->second);
-            
-        } 
-        else
-        {
-            printf_debug("Sending error id=%u to client", dmsg.head.id);
-            // send error
-        }
-        table.erase(it); // clear the record
-    } 
-    else 
-    {
+    if (it == table.end()) {
         printf_debug("No mapping found for id=%u (reply dropped)", dmsg.head.id);
-                }
+        return; // drop packet
+    }
+    if (!is_A_query(dmsg.que.qtype)) return; // drop packet
+
+    if (!is_error(dmsg.head.flags)) printf_debug("Reply is an error");
+    printf_debug("Forwarding reply id=%u to client", dmsg.head.id);
+
+    udp_send(cfg.sock_local, pkt.data, it->second);
+    table.erase(it); // clear the record
 }
 
 void runtime() {
-    // main runtime loop
     int family = cfg.r_addr.ss_family;
     cfg.sock_local = create_udp_socket(family);
     cfg.sock_upstream = create_udp_socket(family);
@@ -110,7 +108,7 @@ void runtime() {
     
     printf_debug("Listening on port %d, upstream \"%s\" socket ready", cfg.loc_port, cfg.hostname.c_str());
 
-    while( !stop_request) {
+    while(!stop_request) {
         // clear file descriptor set, set descriptors
         FD_ZERO(&readfds); 
         FD_SET(cfg.sock_local, &readfds);
@@ -139,7 +137,7 @@ void runtime() {
             UdpPacket pkt = udp_receive(cfg.sock_local);
             if (!pkt.data.empty())
             {
-              handle_client(blocklist, table, pkt);  
+                handle_client(blocklist, table, pkt);  
             }
         } // client
 
@@ -179,13 +177,13 @@ int main (int argc, char **argv) {
         const bool next_is_flag = has_next && arg_flags.contains(argv[i+1]);
         
         if (has_next && !next_is_flag)  {
-            return argv[++i];
+            return argv[++i]; // increments counter!
         }
 
 
         if(!def.empty()) return def;
 
-        std::cerr << "Error: Missing argument for" << flag << "\n";
+        std::cerr << "Error: Missing argument for " << flag << "\n";
         exit(ERR_BAD_INPUT);
     };
 
@@ -210,6 +208,7 @@ int main (int argc, char **argv) {
             print_help();
         }
         else {
+            
             // ignore, probably an user typo
         }
     }

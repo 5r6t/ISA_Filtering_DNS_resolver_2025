@@ -51,9 +51,12 @@ bool is_skippable(std::string line) {
 std::unordered_set<std::string> filter_load(const std::string& filter_file) 
 {
     std::ifstream file(filter_file);
-
+    if (filter_file.empty()) {
+        std::cerr << "Error: Please provide a file\n";
+        exit (ERR_FILE);
+    }
     if (!file.is_open()) {
-        std::cerr << "Error: Cannot open file\n";
+        std::cerr << "Error: Cannot open file \" " << filter_file << "\"\n";
         exit(ERR_FILE);
     }
 

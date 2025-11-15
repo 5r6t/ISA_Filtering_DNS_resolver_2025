@@ -50,3 +50,4 @@ void append_u16(std::vector<uint8_t>& buf, uint16_t value);
 void append_u32(std::vector<uint8_t>& buf, uint32_t value);
 void append_dns_name(std::vector<uint8_t>& buf, const std::string& domain);
 uint16_t read_u16(const std::vector<uint8_t>& buf, size_t offset);
+uint32_t read_u32(const std::vector<uint8_t>& buf, size_t offset);

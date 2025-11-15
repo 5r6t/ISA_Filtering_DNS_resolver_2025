@@ -10,7 +10,7 @@
 
 set -e
 
-PORT=5300
+PORT=5000
 RES_ADDR="8.8.8.8"
 
 echo ">>> Test start >>>"
@@ -18,18 +18,33 @@ cd ..
 
 # make clean && make DEBUG=1
 ./dns -s $RES_ADDR -f testing/example_list.txt -p $PORT &
-# start dns in background, log to /tmp/dns.log
-./dns -s $RES_ADDR -f testing/example_list.txt -p $PORT &
 DNS_PID=$!
 
 # wait until UDP port 5300 is listening (timeout ~5s)
-for i in {1..250}; do
+for i in {1..2500}; do
   ss -u -ln | grep -q ":$PORT\b" && break
   sleep 0.1
 done
 
 # run the Python test
-python3 testing/dns_test_client.py 127.0.0.1 $PORT example.com
+echo "_______________________________________________________________________________________"
+echo "____________________        CORRECT DOMAIN         ____________________________________"
+echo "_______________________________________________________________________________________"
 
-cd testing/
+python3 testing/client.py 127.0.0.1 $PORT example.com
+
+echo "_______________________________________________________________________________________"
+echo "____________________        BLOCKED DOMAIN         ____________________________________"
+echo "_______________________________________________________________________________________"
+
+python3 testing/client.py 127.0.0.1 $PORT 101com.com # blocked domain --> Refused error
+
+echo "_______________________________________________________________________________________"
+echo "____________________      NOT A REAL DOMAIN        ____________________________________"
+echo "_______________________________________________________________________________________"
+
+python3 testing/client.py 127.0.0.1 $PORT exgdample.com
+
+# kill dns process
+kill -SIGINT $DNS_PID
 echo "<<< Test done <<<"
