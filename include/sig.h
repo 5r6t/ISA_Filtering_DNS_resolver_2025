@@ -1,6 +1,6 @@
 /**
  * @file sig.h
- * @brief Handles signal setup and graceful program termination (e.g., SIGINT cleanup).
+ * @brief Handles signal setup
  * 
  * @author Jaroslav Mervart
  * @login xmervaj00

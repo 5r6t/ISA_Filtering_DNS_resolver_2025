@@ -1,7 +1,7 @@
 /**
  * @file dns_parser.h
- * @brief Provides functions for parsing and constructing DNS query and response messages.
- *
+ * @brief parsing and error messages building.
+ * 
  * @author Jaroslav Mervart
  * @login xmervaj00
  * @date 2025-10-05
@@ -56,6 +56,7 @@ bool read_dns_name(const std::vector<uint8_t>&buf, size_t& offset, std::string& 
                     size_t depth=0);
 bool read_u16_advance(const std::vector<uint8_t>&buf, size_t& offset, uint16_t& out);
 bool read_u32_advance(const std::vector<uint8_t>&buf, size_t& offset, uint32_t& out);
+bool parse_id(const std::vector<uint8_t> &msg, uint16_t &out);
 bool parse_dns_a(const std::vector<uint8_t> &msg, DnsMsg &out, size_t& offset);
 bool parse_dns_q(const std::vector<uint8_t> &msg, DnsMsg &out, size_t& offset);
 bool is_A_query(uint16_t qtype);

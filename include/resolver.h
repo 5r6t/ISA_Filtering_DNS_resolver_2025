@@ -1,6 +1,6 @@
 /**
  * @file resolver.h
- * @brief Manages communication with the upstream DNS resolver, including hostname/IP resolution and query forwarding.
+ * @brief Hostname/IP resolution
  *
  * @author Jaroslav Mervart
  * @login xmervaj00

@@ -1,6 +1,6 @@
 /**
  * @file udp.cpp
- * @brief Handles UDP socket creation, binding, and packet send/receive operations.
+ * @brief UDP socket creation, binding, and packet send/receive operations.
  *
  * @author Jaroslav Mervart
  * @login xmervaj00
@@ -23,6 +23,8 @@
 
 constexpr int DNS_UDP_MAX_B = 512;
 
+/// @brief Closes each socket in the list if open.
+/// @param socks List of socket pointers to close.
 void sock_close(std::initializer_list<int*> socks) {
     for (int* sock : socks) {
         if (sock && *sock != -1) {
@@ -32,6 +34,9 @@ void sock_close(std::initializer_list<int*> socks) {
     }
 }
 
+/// @brief Creates an UDP socket for the given address family.
+/// @param family AF_INET or AF_INET6.
+/// @return File descriptor of the created socket.
 int create_udp_socket(int family) 
 {
     int sock = socket(family, SOCK_DGRAM, 0);
@@ -41,10 +46,10 @@ int create_udp_socket(int family)
         exit(ERR_INTERNAL);
     }
 
-    // make sockets non-blocking
-    int yes = 1;
-    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
-    setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &yes, sizeof(yes));
+    // configure socket options (reuseaddr, reuseport)
+    int enable = 1;
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable));
+    setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
 
     if (family == AF_INET6) {
         int off = 0; // allow both v4 and v6
@@ -54,6 +59,10 @@ int create_udp_socket(int family)
     return sock;
 }
 
+/// @brief Binds a UDP socket to the specified port.
+/// @param sock   Socket file descriptor.
+/// @param port   Port to bind.
+/// @param family Address family (AF_INET or AF_INET6).
 void bind_udp_socket(int sock, int port, int family)
 {
     if (family == AF_INET) {
@@ -69,7 +78,7 @@ void bind_udp_socket(int sock, int port, int family)
         if (bind(sock, addr, addr_size) < 0) 
         { 
             std::cerr << "ERROR: Cannot bind IPv4 socket.\n";
-            exit(EXIT_FAILURE);
+            exit(ERR_SOCK_BIND);
         }
     } 
     else if (family == AF_INET6) {
@@ -85,7 +94,7 @@ void bind_udp_socket(int sock, int port, int family)
         if (bind(sock, addr6, addr6_size) < 0) 
         { 
             std::cerr << "ERROR: Cannot bind IPv6 socket.\n";
-            exit(EXIT_FAILURE);
+            exit(ERR_SOCK_BIND);
         }
     }
     else {
@@ -96,6 +105,9 @@ void bind_udp_socket(int sock, int port, int family)
                     (family == AF_INET ? "IPv4" : "IPv6"));
 }
 
+/// @brief Receives a UDP packet from the socket.
+/// @param sock Socket file descriptor.
+/// @return UdpPacket containing data and source address.
 UdpPacket udp_receive (const int sock) {
     UdpPacket pkt{};
     pkt.data.resize(DNS_UDP_MAX_B);
@@ -115,6 +127,10 @@ UdpPacket udp_receive (const int sock) {
     return pkt;
 }
 
+/// @brief Sends a UDP packet to the specified address.
+/// @param sock Socket file descriptor.
+/// @param data Payload to send.
+/// @param addr Destination address.
 void udp_send (const int sock, const std::vector<uint8_t>& data, const sockaddr_storage& addr) {
     
     socklen_t addrlen = 0;

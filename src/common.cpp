@@ -1,11 +1,11 @@
 /**
  * @file tools.cpp
- * @brief Contains utility functions for ISA DNS project.
- *
+ * @brief Utility functions
  * @author Jaroslav Mervart
  * @login xmervaj00
  * @date 2025-10-04
  */
+
 #include "../include/common.h"
 #include "../include/errors.h"
 
@@ -16,8 +16,12 @@
 #include <cstdlib>
 #include <vector>
 
-
 /// @brief stricter version of stoi, catches letters in string, checks range <0,n>
+/// @param str      Input string to parse.
+/// @param max_val  Maximum allowed value.
+/// @param varname  Name of the variable for error reporting.
+/// @return Parsed integer in the valid range.
+/// @throws Exits program on failure.
 int catch_stoi(const std::string &str, const int max_val, const std::string &varname)
 {
     try {
@@ -28,17 +32,23 @@ int catch_stoi(const std::string &str, const int max_val, const std::string &var
         return val;
     } catch (...) {
         std::cerr << "Error: " << varname <<" must be in range <0,"
-                  << max_val << ">" << "\n";
+                << max_val << ">" << "\n";
         exit(ERR_BAD_INPUT);
     }
 }
 
-/// @brief Append a byte to the byte vector.
+
+/// @brief Appends a single byte to the buffer.
+/// @param buf      Destination byte buffer.
+/// @param value    Byte to append.
 void append_u8(std::vector<uint8_t>& buf, uint8_t value) 
 {
     buf.push_back(value);
 }
-/// @brief Append 2bytes into byte vector in network byte order
+
+/// @brief Appends 16-bit value to the buffer in network byte order.
+/// @param buf      Destination byte buffer.
+/// @param value    16-bit value to append .
 void append_u16(std::vector<uint8_t>& buf, uint16_t value) 
 {
     uint16_t net = htons(value);
@@ -47,7 +57,10 @@ void append_u16(std::vector<uint8_t>& buf, uint16_t value)
     buf.push_back(ptr[0]);
     buf.push_back(ptr[1]);
 }
-/// @brief Append 4bytes into byte vector in network byte order
+
+/// @brief Appends 32-bit value to the buffer in network byte order.
+/// @param buf      Destination byte buffer.
+/// @param value    32-bit value to append .
 void append_u32(std::vector<uint8_t>& buf, uint32_t value) 
 {
     uint32_t net = htonl(value);
@@ -57,7 +70,10 @@ void append_u32(std::vector<uint8_t>& buf, uint32_t value)
         buf.push_back(ptr[i]);
     }
 }
-/// @brief  Append string to byte vector
+
+/// @brief  Append string to byte vector.
+/// @param buf      Destination byte buffer.
+/// @param domain   Domain name (e.g. "example.com").
 void append_dns_name(std::vector<uint8_t>& buf, const std::string& domain) 
 {
     std::stringstream ss(domain);
@@ -69,16 +85,22 @@ void append_dns_name(std::vector<uint8_t>& buf, const std::string& domain)
     buf.push_back(0); // end of name
 }
 
-/// @brief Return 2bytes from buffer
-/// caller is responsible for checking boundaries
+/// @brief Reads 16-bit value from the buffer.
+/// @param buf      Source byte buffer.
+/// @param offset   Starting position in the buffer.
+/// @return Parsed 16-bit value.
+/// @note Caller must ensure bounds are valid.
 uint16_t read_u16(const std::vector<uint8_t>& buf, size_t offset) 
 {
     return ((static_cast<uint16_t>(buf[offset]) << 8) | 
             static_cast<uint16_t>(buf[offset+1]));
 }
 
-/// @brief Return 4bytes from buffer
-/// caller is responsible for checking boundaries
+/// @brief Reads 32-bit value from the buffer.
+/// @param buf      Source byte buffer.
+/// @param offset   Starting position in the buffer.
+/// @return Parsed 32-bit value.
+/// @note Caller must ensure bounds are valid.
 uint32_t read_u32(const std::vector<uint8_t>& buf, size_t offset)
 {
     uint32_t res = 0;

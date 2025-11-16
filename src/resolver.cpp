@@ -1,6 +1,6 @@
 /**
  * @file resolver.cpp
- * @brief Manages communication with the upstream DNS resolver, including hostname/IP resolution and query forwarding.
+ * @brief Hostname/IP resolution
  *
  * @author Jaroslav Mervart
  * @login xmervaj00
@@ -19,8 +19,11 @@
 #include <arpa/inet.h>
 #include <netdb.h> // getaddrinfo
 
-/** @note addresses to be printed (e.g. debug) when using dual stack will need to be trimmed */ 
-
+/// @brief Resolves a hostname or IP string to a sockaddr_storage.
+/// @param host_name Hostname or IP address to resolve.
+/// @param port      Port to set in the resulting address.
+/// @return sockaddr_storage containing the resolved address.
+/// @note When printing resolved addresses in dual-stack setups, trim IPv6 scope/formatting as needed.
 sockaddr_storage resolve_host(const std::string &host_name, uint16_t port) {
 
     if(host_name.empty()) {

@@ -1,6 +1,6 @@
 /**
  * @file signal.cpp
- * @brief Handles signal setup and graceful program termination (e.g., SIGINT cleanup).
+ * @brief Handles signal setup
  *
  * @author Jaroslav Mervart
  * @login xmervaj00
@@ -18,11 +18,14 @@
 
 std::atomic<bool>stop_request = false;
 
-void handle_sigint(int) {
+/// @brief Handles SIGINT and requests shutdown.
+/// @param Unused signal number.
+void handle_sigint(int /*unused*/) {
     stop_request = true;
     printf_debug("SIGINT detected...\n");
 }
 
+/// @brief Installs signal handlers for runtime control.
 void setup_signal_handlers() {
     std::signal(SIGINT, handle_sigint);
 }

@@ -1,32 +1,33 @@
 #!/bin/bash
 #  Don't forget to run `chmod +x lex_test.sh`
 
-# * @file udp.cpp
-# * @brief Handles UDP socket creation, binding, and packet send/receive operations.
+# * @file test.sh
+# * @brief automated testing of dns resolver
 # *
 # * @author Jaroslav Mervart
 # * @login xmervaj00
 # * @date 2025-10-11
-
 set -e
 
 PORT=5000
 RES_ADDR="8.8.8.8"
 
 echo ">>> Test start >>>"
-cd ..
+cd "$(dirname "$0")/.."
 
-# make clean && make DEBUG=1
-./dns -s $RES_ADDR -f testing/example_list.txt -p $PORT &
+# Start DNS server
+./dns -s "$RES_ADDR" -f testing/example_list.txt -p "$PORT" &
 DNS_PID=$!
 
-# wait until UDP port 5300 is listening (timeout ~5s)
-for i in {1..2500}; do
+# Ensure cleanup even on error
+trap "kill -SIGINT $DNS_PID 2>/dev/null" EXIT
+
+# Wait until UDP port is listening
+for i in {1..250}; do
   ss -u -ln | grep -q ":$PORT\b" && break
   sleep 0.1
 done
 
-# run the Python test
 echo "_______________________________________________________________________________________"
 echo "____________________        CORRECT DOMAIN         ____________________________________"
 echo "_______________________________________________________________________________________"
@@ -37,7 +38,7 @@ echo "__________________________________________________________________________
 echo "____________________        BLOCKED DOMAIN         ____________________________________"
 echo "_______________________________________________________________________________________"
 
-python3 testing/client.py 127.0.0.1 $PORT 101com.com # blocked domain --> Refused error
+python3 testing/client.py 127.0.0.1 $PORT 101com.com
 
 echo "_______________________________________________________________________________________"
 echo "____________________      NOT A REAL DOMAIN        ____________________________________"
@@ -45,6 +46,10 @@ echo "__________________________________________________________________________
 
 python3 testing/client.py 127.0.0.1 $PORT exgdample.com
 
-# kill dns process
-kill -SIGINT $DNS_PID
+echo "_______________________________________________________________________________________"
+echo "____________________      IPV6 TEST (LOOPBACK)     ____________________________________"
+echo "_______________________________________________________________________________________"
+
+python3 testing/client.py ::1 $PORT example.com
+
 echo "<<< Test done <<<"

@@ -5,45 +5,46 @@
 # @login xmervaj00
 # @date 2025-10-4
 
-# --- Compiler & flags ---
+# Compiler & flags
 CXX = g++
 CXXFLAGS = -std=c++20 -Wall -Wextra -Werror -Wshadow -pedantic -g -O0
 INCLUDES = -Iinclude
 
-# make DEBUG=1
-ifdef DEBUG
+# Conditional debug flag
+ifeq ($(BUILD_DEBUG),1)
     CXXFLAGS += -DDEBUG_PRINT
 endif
 
-# --- Directories ---
+# Directories
 SRC_DIR = src
 OBJ_DIR = build
 
-# --- Files ---
+# Files
 TARGET = dns
 SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
-# --- Rules ---
+# Rules
 all: $(OBJ_DIR) $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) -o $(TARGET)
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 
-# --- Utility targets ---
+# Utility targets
 test: $(TARGET)
-	sudo ./$(TARGET) -s 8.8.8.8 -p 5300 -f testing/example_list.txt
+	./testing/test.sh
 
 debug:
-	make clean && make DEBUG=1
+	$(MAKE) clean
+	$(MAKE) BUILD_DEBUG=1
 
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
 
-.PHONY: all clean run debug
+.PHONY: all clean debug test

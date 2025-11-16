@@ -1,21 +1,24 @@
 /**
  * @file dns_parser.cpp
- * @brief Provides functions for parsing and constructing DNS query and response messages.
+ * @brief DNS parsing and error messages building.
  *
  * @author Jaroslav Mervart
  * @login xmervaj00
  * @date 2025-10-05
  */
 
-#include <arpa/inet.h> 
-
 #include "dns_parser.h"
 #include "common.h"
+
+#include <arpa/inet.h> 
 
 constexpr size_t DEPTH = 10; // Max recursion depth for QNAME parsing
 using enum DNSError;
 
-
+/// @brief 
+/// @param client_flags 
+/// @param error 
+/// @return 
 uint16_t make_err_flags(uint16_t client_flags, DNSError error)
 {
     uint16_t f = 0; 
@@ -25,6 +28,7 @@ uint16_t make_err_flags(uint16_t client_flags, DNSError error)
     f |= (static_cast<uint16_t>(error) & 0xF);
     return f;
 }
+
 /// @brief 
 /// @param err_type 
 /// @param  
@@ -49,7 +53,6 @@ std::vector<uint8_t> build_error(const DnsMsg &orig, DNSError error) {
 
     return out;
 }
-
 
 /// @brief Parse DNS-name into string
 /// @param buf      Input buffer with dns message
@@ -136,12 +139,17 @@ bool read_u32_advance(const std::vector<uint8_t>&buf, size_t& offset, uint32_t& 
     return true;
 }
 
-
+/// @brief 
+/// @param qtype 
+/// @return 
 bool is_A_query (uint16_t qtype) {
     printf_debug("%s", qtype==1 ? "Query type A" : "Query type NOT A"); 
     return qtype == 1;
 }
 
+/// @brief 
+/// @param flags 
+/// @return 
 bool is_error(uint16_t flags) {
     uint16_t mask = 0x000F; // lowest 4 bits
     auto rcode = static_cast<DNSError>(mask & flags);
@@ -159,6 +167,10 @@ bool is_error(uint16_t flags) {
 }
 
 /// @brief call with size_t offset = 0;
+/// @param msg 
+/// @param out 
+/// @param offset 
+/// @return 
 bool parse_dns_q(const std::vector<uint8_t> &msg, DnsMsg &out, size_t &offset) {
     bool ok = true;
     if ( !read_u16_advance(msg, offset, out.head.id))       ok=false; 
@@ -180,12 +192,16 @@ bool parse_dns_q(const std::vector<uint8_t> &msg, DnsMsg &out, size_t &offset) {
     }
     else
         printf_debug("Couldn't parse DNS question part: bad format");
-        
+
     return ok;
 }
 
 
 /// @brief call after parse_dns_q and use it's output offset
+/// @param msg 
+/// @param out 
+/// @param offset 
+/// @return 
 bool parse_dns_a(const std::vector<uint8_t> &msg, DnsMsg &out, size_t &offset) {
     bool ok = true;
 
@@ -213,4 +229,14 @@ bool parse_dns_a(const std::vector<uint8_t> &msg, DnsMsg &out, size_t &offset) {
         printf_debug("Couldn't parse DNS Answer part: bad format");
     
     return ok;
+}
+
+/// @brief 
+/// @param msg 
+/// @param out 
+/// @return 
+bool parse_id(const std::vector<uint8_t> &msg, uint16_t &out) {
+    if (msg.size() < 2) return false;
+    out = read_u16(msg, 0);
+    return true;
 }

@@ -1,7 +1,7 @@
 /**
  * @file tools.h
- * @brief Header file with function declarations, macros used in ISA DNS project.
- *
+ * @brief Utility functions and macros for ISA DNS project.
+ * 
  * @author Jaroslav Mervart
  * @login xmervaj00
  * @date 2025-10-04
