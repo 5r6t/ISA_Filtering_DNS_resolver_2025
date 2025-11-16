@@ -31,20 +31,25 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) -o $(TARGET)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	@$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
 $(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
+	@mkdir -p $(OBJ_DIR)
+
+test_parse_name:
+	$(CXX) $(CXXFLAGS) $(INCLUDES) testing/test_parse_name.cpp src/common.cpp src/dns_parser.cpp -o testing/test_dns_name
 
 # Utility targets
 test: $(TARGET)
-	./testing/test.sh
+	@$(MAKE) -s test_parse_name
+	@./testing/test.sh
 
 debug:
-	$(MAKE) clean
-	$(MAKE) BUILD_DEBUG=1
+	@$(MAKE) -s clean
+	echo "Building debug version..."
+	@$(MAKE) BUILD_DEBUG=1
 
 clean:
-	rm -rf $(OBJ_DIR) $(TARGET)
+	@rm -rf $(OBJ_DIR) $(TARGET) testing/test_dns_name
 
 .PHONY: all clean debug test

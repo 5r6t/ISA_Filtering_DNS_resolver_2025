@@ -15,10 +15,10 @@
 constexpr size_t DEPTH = 10; // Max recursion depth for QNAME parsing
 using enum DNSError;
 
-/// @brief 
-/// @param client_flags 
-/// @param error 
-/// @return 
+/// @brief Builds DNS response flags for an error reply.
+/// @param client_flags Flags from the original client query.
+/// @param error        Error code to set in the RCODE field.
+/// @return Combined flags for an error response.
 uint16_t make_err_flags(uint16_t client_flags, DNSError error)
 {
     uint16_t f = 0; 
@@ -29,10 +29,10 @@ uint16_t make_err_flags(uint16_t client_flags, DNSError error)
     return f;
 }
 
-/// @brief 
-/// @param err_type 
-/// @param  
-/// @return 
+/// @brief Builds a DNS error response message.
+/// @param orig  Original parsed DNS message.
+/// @param error Error code to include.
+/// @return DNS message.
 std::vector<uint8_t> build_error(const DnsMsg &orig, DNSError error) {
     std::vector<uint8_t> out;
     out.reserve(512);
@@ -54,11 +54,11 @@ std::vector<uint8_t> build_error(const DnsMsg &orig, DNSError error) {
     return out;
 }
 
-/// @brief Parse DNS-name into string
-/// @param buf      Input buffer with dns message
-/// @param offset   Offset within the buffer, updates after successful read.
-/// @param out      returns name in string format
-/// @param depth    infinite recursion prevention. ignore when calling
+/// @brief Parse DNS-name into string.
+/// @param buf      Input DNS message buffer.
+/// @param offset   Current offset; updated during parsing.
+/// @param out      Output string containing the parsed name.
+/// @param depth    Recursion depth limit.
 /// @return True on success, false if parsing fails or bounds are exceeded.
 bool read_dns_name(const std::vector<uint8_t>&buf, size_t& offset, std::string& out, size_t depth)
 {
@@ -116,10 +116,10 @@ bool read_dns_name(const std::vector<uint8_t>&buf, size_t& offset, std::string& 
 }
 
 /// @brief Reads 16-bit value from buffer and advances offset
-/// @param buf      Input byte buffer
-/// @param offset   Current offset within the buffer; increment by 2 on success
-/// @param out      Output parameter to store 16-bit value
-/// @return True on success, false if buffer bounds are exceeded
+/// @param buf      Input byte buffer.
+/// @param offset   Current offset; advanced by 2 on success.
+/// @param out      Output 16-bit value.
+/// @return True on success, false if bounds exceeded.
 bool read_u16_advance(const std::vector<uint8_t>&buf, size_t& offset, uint16_t& out) {
     if (offset+1 > buf.size()) return false;
     out = read_u16(buf, offset);
@@ -127,11 +127,11 @@ bool read_u16_advance(const std::vector<uint8_t>&buf, size_t& offset, uint16_t& 
     return true;
 }
 
-/// @brief Reads 32-bit value from buffer and advances offset
-/// @param buf      Input byte buffer
-/// @param offset   Current offset within the buffer; increment by 4 on success
-/// @param out      Output parameter to store 16-bit value
-/// @return True on success, false if buffer bounds are exceeded
+/// @brief Reads 32-bit value from buffer and advances offset.
+/// @param buf      Input byte buffer.
+/// @param offset   Current offset; advanced by 4 on success.
+/// @param out      Output 32-bit value.
+/// @return True on success, false if buffer bounds are exceeded.
 bool read_u32_advance(const std::vector<uint8_t>&buf, size_t& offset, uint32_t& out) {
     if (offset+1 > buf.size()) return false;
     out = read_u32(buf, offset);
@@ -139,17 +139,17 @@ bool read_u32_advance(const std::vector<uint8_t>&buf, size_t& offset, uint32_t& 
     return true;
 }
 
-/// @brief 
-/// @param qtype 
-/// @return 
+/// @brief Checks whether the query type is DNS A (host address).
+/// @param qtype Query type field.
+/// @return True if qtype == 1.
 bool is_A_query (uint16_t qtype) {
     printf_debug("%s", qtype==1 ? "Query type A" : "Query type NOT A"); 
     return qtype == 1;
 }
 
-/// @brief 
-/// @param flags 
-/// @return 
+/// @brief Checks whether a DNS header flags value indicates an error.
+/// @param flags Full 16-bit flags field.
+/// @return True if an error RCODE is set.
 bool is_error(uint16_t flags) {
     uint16_t mask = 0x000F; // lowest 4 bits
     auto rcode = static_cast<DNSError>(mask & flags);
@@ -166,11 +166,11 @@ bool is_error(uint16_t flags) {
     return true;
 }
 
-/// @brief call with size_t offset = 0;
-/// @param msg 
-/// @param out 
-/// @param offset 
-/// @return 
+/// @brief Parses the DNS question section (header + QNAME + QTYPE + QCLASS).
+/// @param msg    Input DNS message buffer.
+/// @param out    Parsed DNS message structure.
+/// @param offset Offset pointer (start at 0).
+/// @return True on success, false on malformed data.
 bool parse_dns_q(const std::vector<uint8_t> &msg, DnsMsg &out, size_t &offset) {
     bool ok = true;
     if ( !read_u16_advance(msg, offset, out.head.id))       ok=false; 
@@ -197,11 +197,11 @@ bool parse_dns_q(const std::vector<uint8_t> &msg, DnsMsg &out, size_t &offset) {
 }
 
 
-/// @brief call after parse_dns_q and use it's output offset
-/// @param msg 
-/// @param out 
-/// @param offset 
-/// @return 
+/// @brief Parses a DNS answer section (ANAME, TYPE, CLASS, TTL, RDLENGTH, RDATA).
+/// @param msg    Input DNS message buffer.
+/// @param out    Parsed DNS message structure.
+/// @param offset Offset after parsing the question section.
+/// @return True on success, false on malformed data.
 bool parse_dns_a(const std::vector<uint8_t> &msg, DnsMsg &out, size_t &offset) {
     bool ok = true;
 
@@ -231,10 +231,10 @@ bool parse_dns_a(const std::vector<uint8_t> &msg, DnsMsg &out, size_t &offset) {
     return ok;
 }
 
-/// @brief 
-/// @param msg 
-/// @param out 
-/// @return 
+/// @brief Extracts only the DNS ID field from a message.
+/// @param msg Input DNS message buffer.
+/// @param out Output ID value.
+/// @return True if at least two bytes are available.
 bool parse_id(const std::vector<uint8_t> &msg, uint16_t &out) {
     if (msg.size() < 2) return false;
     out = read_u16(msg, 0);

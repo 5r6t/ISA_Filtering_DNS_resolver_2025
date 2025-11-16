@@ -55,6 +55,21 @@ void handle_client(const std::unordered_set<std::string> &blocklist,
 {
     DnsMsg dmsg{};
     size_t offset = 0;
+
+    // Malformed check: DNS header must be at least 12 bytes
+    if (pkt.data.size() < 12) {
+        uint16_t id = 0;
+        if (parse_id(pkt.data, id)) {
+            dmsg.head.id = id;
+        } else {
+            dmsg.head.id = 0;  // safest fallback
+        }
+
+        auto resp = build_error(dmsg, FORMAT_ERR);
+        udp_send(cfg.sock_local, resp, pkt.src);
+        return;
+    }
+
     if (!parse_dns_q(pkt.data, dmsg, offset)) {
         // ensures id field is filled 
         if (!parse_id(pkt.data, dmsg.head.id)) {

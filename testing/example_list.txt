@@ -1,9 +1,7 @@
 # available at:
 # https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=1
-# must be ascii 
-# 
 
-# deliberately a set of bad ones
+# Set of bad domain names
 notadomain          # 1 no dot
 example..com        # 2 double dot
 .hidden.com         # 3 leading dot
@@ -14,7 +12,7 @@ http://site.com     # 7 includes scheme
 site.com/path       # 8 includes path
 ad*.example.com     # 9 invalid character
 äddomain.cz         # 10 non-ASCII (without punycode)
-ad*.example.com 
+ad*.example.com     # 11 forbidden character
 
 101com.com
 180hits.de
