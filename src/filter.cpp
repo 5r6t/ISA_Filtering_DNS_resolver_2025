@@ -61,7 +61,7 @@ bool is_skippable(std::string line) {
 
 /// @brief Loads and normalizes domain entries from a filter file.
 /// @param filter_file Path to the filter file.
-/// @return Set of valid, normalized domains.
+/// @return Set of valid, normalized domains. Exits on file errors.
 std::unordered_set<std::string> filter_load(const std::string& filter_file) 
 {
     std::ifstream file(filter_file);

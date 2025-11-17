@@ -12,4 +12,5 @@
 #include <string>
 #include <netinet/in.h>
 
+const char* addr_to_str(const sockaddr_storage& addr);
 sockaddr_storage resolve_host(const std::string &host_name, uint16_t port = 53);

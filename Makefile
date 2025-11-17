@@ -8,7 +8,7 @@
 # Avoids GNU-only features like wildcard, patsubst, ifeq, pattern rules
 SHELL=/usr/bin/env bash
 CXX = g++
-CXXFLAGS = -std=c++20 -Wall -Wextra -Werror -Wshadow -pedantic -g -O0
+CXXFLAGS = -std=c++20 -Wall -Wextra -Werror -Wshadow -pedantic
 INCLUDES = -Iinclude
 
 SRC_DIR = src
@@ -34,9 +34,7 @@ OBJS = \
     build/sig.o \
     build/udp.o
 	
-debug:
-	$(MAKE) clean
-	$(MAKE) all CXXFLAGS="$(CXXFLAGS) -DDEBUG_PRINT"
+
 
 all: $(TARGET)
 
@@ -67,6 +65,9 @@ build/udp.o: src/udp.cpp
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
+
+debug: CXXFLAGS = -std=c++20 -Wall -Wextra -Werror -Wshadow -pedantic -O0 -g -DDEBUG_PRINT
+debug: clean all
 
 test_parse_name:
 	$(CXX) $(CXXFLAGS) $(INCLUDES) testing/test_parse_name.cpp \

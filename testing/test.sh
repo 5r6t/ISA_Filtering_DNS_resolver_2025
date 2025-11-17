@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-#  Don't forget to run `chmod +x test.sh`
 
 # * @file test.sh
 # * @brief automated testing of dns resolver
@@ -20,7 +19,8 @@ FAIL_MSG="${RED}>>> FAIL${RESET}"
 echo -e "${YELLOW}>>> Test start ${RESET}>>>"
 cd "$(dirname "$0")/.."
 
-./dns -s "$RES_ADDR" -f testing/example_list.txt -p "$PORT" &
+# VERBOSE ENABLED
+./dns -s "$RES_ADDR" -f testing/example_list.txt -p "$PORT" -v &
 DNS_PID=$!
 
 # Kill dns resolver process at the end of the script

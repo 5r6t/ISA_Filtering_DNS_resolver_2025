@@ -16,7 +16,7 @@
 enum class DNSError {
     NO_ERR, FORMAT_ERR, SRVR_FAIL_ERR, NAME_ERR, NOT_IMPLEM_ERR, REFUSED_ERR  
 }; 
-// header has 12 bytes
+// dns header has 12 bytes
 struct DnsHead
 {
     // 2B each

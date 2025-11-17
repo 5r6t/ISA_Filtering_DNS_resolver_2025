@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Minimal DNS UDP client
+# DNS UDP client
 # Usage:
 #   python3 dns_test_client.py <host> <port> <domain>
 

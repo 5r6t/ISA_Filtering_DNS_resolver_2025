@@ -31,6 +31,10 @@
 #define printf_debug(format, ...) ((void)0)
 #endif
 
+#define logv(fmt, ...) \
+    do { if (cfg.verbose) fprintf(stdout, "|VERB|\t" fmt "\n", ##__VA_ARGS__); } while (0)
+
+
 struct Config {
     uint16_t loc_port = 53;
 

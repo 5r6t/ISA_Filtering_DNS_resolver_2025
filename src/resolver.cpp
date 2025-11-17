@@ -19,6 +19,30 @@
 #include <arpa/inet.h>
 #include <netdb.h> // getaddrinfo
 
+/// @brief Convert a sockaddr_storage address to a readable string.
+/// @param addr Socket address (IPv4 or IPv6).
+/// @return Pointer to a static null-terminated string containing the
+///         textual IP representation, or "UNKNOWN" for unsupported families.
+/// @note The returned buffer is static and will be overwritten by subsequent calls.
+const char* addr_to_str(const sockaddr_storage& addr) {
+    static char buf[INET6_ADDRSTRLEN];
+
+    int family = addr.ss_family;
+    const void* src = nullptr;
+
+    if (family == AF_INET) {
+        src = &reinterpret_cast<const sockaddr_in&>(addr).sin_addr;
+    } else if (family == AF_INET6) {
+        src = &reinterpret_cast<const sockaddr_in6&>(addr).sin6_addr;
+    } else {
+        return "UNKNOWN";
+    }
+
+    inet_ntop(family, src, buf, sizeof(buf));
+    return buf;
+}
+
+
 /// @brief Resolves a hostname or IP string to a sockaddr_storage.
 /// @param host_name Hostname or IP address to resolve.
 /// @param port      Port to set in the resulting address.
@@ -48,16 +72,15 @@ sockaddr_storage resolve_host(const std::string &host_name, uint16_t port) {
 
     // first address found is kept
     for (auto next = result; next != nullptr; next = next->ai_next) {
+        std::memcpy(&addr, next->ai_addr, next->ai_addrlen);
         if (next->ai_family == AF_INET) {
-            addr = *reinterpret_cast<sockaddr_storage*>(next->ai_addr);
             reinterpret_cast<sockaddr_in*>(&addr)->sin_port = htons(port);
             family = AF_INET;
-            break; // found address
+            break;
         } else if (next->ai_family == AF_INET6) {
-            addr = *reinterpret_cast<sockaddr_storage*>(next->ai_addr);
             reinterpret_cast<sockaddr_in6*>(&addr)->sin6_port = htons(port);
             family = AF_INET6;
-            break; // found address
+            break;
         }
     }
     if (family == AF_UNSPEC) {
@@ -67,12 +90,9 @@ sockaddr_storage resolve_host(const std::string &host_name, uint16_t port) {
     }
 
     // debug
-    char buf[INET6_ADDRSTRLEN];
-    void *src = (family == AF_INET) 
-       ? reinterpret_cast<void*>(&reinterpret_cast<sockaddr_in*>(&addr)->sin_addr)
-       : reinterpret_cast<void*>(&reinterpret_cast<sockaddr_in6*>(&addr)->sin6_addr);
-    inet_ntop(family, src, buf, sizeof(buf));
-    printf_debug("Resolved %s -> %s:%d", host_name.c_str(), buf, port);
+
+
+    printf_debug("Resolved %s -> %s:%d", host_name.c_str(), addr_to_str(addr), port);
     
     freeaddrinfo(result);
 
