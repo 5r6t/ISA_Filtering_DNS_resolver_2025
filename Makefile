@@ -4,52 +4,80 @@
 # @author Jaroslav Mervart
 # @login xmervaj00
 # @date 2025-10-4
-
-# Compiler & flags
+# Portable Makefile for GNU make and BSD make (EVA)
+# Avoids GNU-only features like wildcard, patsubst, ifeq, pattern rules
+SHELL=/usr/bin/env bash
 CXX = g++
 CXXFLAGS = -std=c++20 -Wall -Wextra -Werror -Wshadow -pedantic -g -O0
 INCLUDES = -Iinclude
 
-# Conditional debug flag
-ifeq ($(BUILD_DEBUG),1)
-    CXXFLAGS += -DDEBUG_PRINT
-endif
-
-# Directories
 SRC_DIR = src
 OBJ_DIR = build
 
-# Files
 TARGET = dns
-SRCS = $(wildcard $(SRC_DIR)/*.cpp)
-OBJS = $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 
-# Rules
-all: $(OBJ_DIR) $(TARGET)
+SRCS = \
+    src/common.cpp \
+    src/dns_parser.cpp \
+    src/filter.cpp \
+    src/main.cpp \
+    src/resolver.cpp \
+    src/sig.cpp \
+    src/udp.cpp
 
-$(TARGET): $(OBJS)
+OBJS = \
+    build/common.o \
+    build/dns_parser.o \
+    build/filter.o \
+    build/main.o \
+    build/resolver.o \
+    build/sig.o \
+    build/udp.o
+	
+debug:
+	$(MAKE) clean
+	$(MAKE) all CXXFLAGS="$(CXXFLAGS) -DDEBUG_PRINT"
+
+all: $(TARGET)
+
+$(TARGET): $(OBJ_DIR) $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) -o $(TARGET)
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
-	@$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+# Explicit rules for EACH object file
+build/common.o: src/common.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c src/common.cpp -o build/common.o
+
+build/dns_parser.o: src/dns_parser.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c src/dns_parser.cpp -o build/dns_parser.o
+
+build/filter.o: src/filter.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c src/filter.cpp -o build/filter.o
+
+build/main.o: src/main.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c src/main.cpp -o build/main.o
+
+build/resolver.o: src/resolver.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c src/resolver.cpp -o build/resolver.o
+
+build/sig.o: src/sig.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c src/sig.cpp -o build/sig.o
+
+build/udp.o: src/udp.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c src/udp.cpp -o build/udp.o
 
 $(OBJ_DIR):
-	@mkdir -p $(OBJ_DIR)
+	mkdir -p $(OBJ_DIR)
 
 test_parse_name:
-	$(CXX) $(CXXFLAGS) $(INCLUDES) testing/test_parse_name.cpp src/common.cpp src/dns_parser.cpp -o testing/test_dns_name
+	$(CXX) $(CXXFLAGS) $(INCLUDES) testing/test_parse_name.cpp \
+		src/common.cpp src/dns_parser.cpp \
+		-o testing/test_dns_name
 
-# Utility targets
-test: $(TARGET)
-	@$(MAKE) -s test_parse_name
-	@./testing/test.sh
-
-debug:
-	@$(MAKE) -s clean
-	echo "Building debug version..."
-	@$(MAKE) BUILD_DEBUG=1
+test: all
+	$(MAKE) test_parse_name
+	$(SHELL) testing/test.sh
 
 clean:
-	@rm -rf $(OBJ_DIR) $(TARGET) testing/test_dns_name
+	rm -rf $(OBJ_DIR) $(TARGET) testing/test_dns_name
 
-.PHONY: all clean debug test
+.PHONY: all clean test test_parse_name

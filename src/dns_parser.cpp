@@ -11,6 +11,8 @@
 #include "common.h"
 
 #include <arpa/inet.h> 
+#include <netinet/in.h>
+#include <sys/socket.h>
 
 constexpr size_t DEPTH = 10; // Max recursion depth for QNAME parsing
 using enum DNSError;
@@ -222,7 +224,6 @@ bool parse_dns_a(const std::vector<uint8_t> &msg, DnsMsg &out, size_t &offset) {
         char ip[INET_ADDRSTRLEN];
         uint32_t ip_net = htonl(out.answ.rdata);
         inet_ntop(AF_INET, &ip_net, ip, sizeof(ip));
-
         printf_debug("Resolved address:%s", ip); // IP addr
     }
     else

@@ -20,6 +20,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/socket.h>
 
 constexpr int DNS_UDP_MAX_B = 512;
 

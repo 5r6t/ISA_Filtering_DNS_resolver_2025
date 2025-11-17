@@ -36,18 +36,16 @@ int main() {
         std::cout << "\n";
     }
 
-
     {
         std::cout << ">>> TEST 2: name with pointer <<<\n";
         const std::vector<uint8_t> buf2 = {
-            0x03,'w','w','w',
-            0x00,
+            // offset 0:
+            0x03,'w','w','w', 0xC0,0x06,
 
-            0x03,'g','o','o','g','l','e',
+            // offset 6:
+            0x06,'g','o','o','g','l','e',
             0x03,'c','o','m',
-            0x00,
-
-            0x03,'m','a','i','l',0xC0,0x04
+            0x00
         };
 
         size_t offset = 0;
@@ -60,7 +58,6 @@ int main() {
 
         std::cout << "\n";
     }
-
 
     {
         std::cout << ">>> TEST 3: multiple pointers <<<\n";
@@ -105,6 +102,6 @@ int main() {
 
         std::cout << "\n";
     }
-
+    
     return 0;
 }

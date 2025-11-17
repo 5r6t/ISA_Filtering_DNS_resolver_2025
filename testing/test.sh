@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #  Don't forget to run `chmod +x test.sh`
 
 # * @file test.sh
@@ -27,12 +27,16 @@ DNS_PID=$!
 trap "kill -SIGINT $DNS_PID 2>/dev/null" EXIT
 
 # Wait for UDP port to open
-for i in {1..250}; do
-  ss -u -ln | grep -q ":$PORT\b" && break
-  sleep 0.1
+for i in $(seq 1 250); do
+    # either BSD or Linux netstat 
+    ns=$(netstat -an -p udp 2>/dev/null || netstat -an -u 2>/dev/null)
+
+    echo "$ns" | grep -qE "(\\.|:)$PORT([^0-9]|$)" && break
+
+    sleep 0.1
 done
 
-# helper: run client and extract RCODE
+#run client and extract RCODE
 run_test() {
     output=$(python3 testing/client.py "$1" "$PORT" "$2" || true)
     echo "$output"

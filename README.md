@@ -1,17 +1,167 @@
-# ISA_Filtering_DNS_resolver_2025
-# ISA Project – Concise Assignment Summary
+# Basic information
+- author: Jaroslav Mervart
+- xlogin: xmervaj00
+- date created:30th of September 2025
 
-## General Requirements
-- Implement a communicating application using **BSD sockets** (unless specified otherwise).
-- Language: **C/C++**.
-- Must compile & run on **merlin.fit.vutbr.cz (GNU/Linux)**.
-- Code must be **portable** (may be tested on different Linux distros/architectures).
+# Short description of the program
+
+## Extensions
+
+## Limitations
+
+## Program Execution
+- **Usage:**  
+  `dns -s server [-p port] -f filter_file`
+- Parameters (any order):
+  - `-s`: DNS resolver address (IP/domain).
+  - `-p port`: listening port (default: 53).
+  - `-f filter_file`: file with blocked domains.
+
+## Launch examples
+```bash
+./dns -s 8.8.8.8 -f blocked_domains.txt
+./dns -s 8.8.8.8 -p 5000 -f blocked_domains.txt
+./dns -s dns.google -p 5000 -f blocked_domains.txt
+```
+
+# List of submitted files
+```bash
+├── LICENSE
+├── Makefile
+├── manual.pdf
+├── README.md
+│
+├── include
+│   ├── common.h
+│   ├── dns_parser.h
+│   ├── errors.h
+│   ├── filter.h
+│   ├── resolver.h
+│   ├── sig.h
+│   └── udp.h
+│
+├── src
+│   ├── common.cpp
+│   ├── dns_parser.cpp
+│   ├── filter.cpp
+│   ├── main.cpp
+│   ├── resolver.cpp
+│   ├── sig.cpp
+│   └── udp.cpp
+│
+└── testing
+    ├── client.py
+    ├── example_list.txt
+    ├── test_parse_name.cpp
+    └── test.sh
+```
+
+###################################################################
+```bash
+xmervaj00@merlin: ./dns -s 8.8.8.8 -p 5000 -f testing/example_list.txt 
+resolver.cpp:75     |    resolve_host | Resolved 8.8.8.8 -> 8.8.8.8:53
+udp.cpp:104         | bind_udp_socket | Socket bound to port 5000 (family IPv6)
+filter.cpp:93       |     filter_load | Filter list updated
+main.cpp:139        |         runtime | Listening on port 5000, upstream "8.8.8.8" socket ready
+main.cpp:171        |         runtime | CLIENT QUERY RECEIVED
+udp.cpp:126         |     udp_receive | Received 52 bytes via UDP.
+dns_parser.cpp:114  |   read_dns_name | parsed DNS name (may be partial): example.com
+dns_parser.cpp:186  |     parse_dns_q | ID: 44409
+dns_parser.cpp:187  |     parse_dns_q | Flags: 288
+dns_parser.cpp:188  |     parse_dns_q | QDCOUNT: 1
+dns_parser.cpp:189  |     parse_dns_q | QNAME: example.com
+dns_parser.cpp:190  |     parse_dns_q | QTYPE: 1
+dns_parser.cpp:191  |     parse_dns_q | QCLASS:1
+dns_parser.cpp:146  |      is_A_query | Query type A
+filter.cpp:125      |      is_blocked |  example.com is allowed.
+main.cpp:95         |   handle_client | Stored mapping id=44409
+udp.cpp:155         |        udp_send | Sent 52 bytes via UDP
+main.cpp:181        |         runtime | REPLY FROM UPSTREAM
+udp.cpp:126         |     udp_receive | Received 136 bytes via UDP.
+main.cpp:117        | handle_upstream | Forwarding reply id=44409 to client
+udp.cpp:155         |        udp_send | Sent 136 bytes via UDP
+```
+```bash
+jackie@d02-0204b: dig @147.229.176.19 -p 5000 example.com
+
+; <<>> DiG 9.18.41 <<>> @147.229.176.19 -p 5000 example.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 44409
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 6, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;example.com.                   IN      A
+
+;; ANSWER SECTION:
+example.com.            107     IN      A       23.192.228.84
+example.com.            107     IN      A       23.220.75.245
+example.com.            107     IN      A       23.192.228.80
+example.com.            107     IN      A       23.215.0.136
+example.com.            107     IN      A       23.220.75.232
+example.com.            107     IN      A       23.215.0.138
+
+;; Query time: 5 msec
+;; SERVER: 147.229.176.19#5000(147.229.176.19) (UDP)
+;; WHEN: Sun Nov 16 19:56:44 CET 2025
+;; MSG SIZE  rcvd: 136
+```
+###################################################################
+# Merlin
+```bash
+dig -6 @2001:67c:1220:a14::1037  -p 5000 example.com
+; <<>> DiG 9.20.15-1~deb13u1~bpo12+1-Debian <<>> -6 @2001:67c:1220:a14::1037 -p 5000 example.com
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 36191
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 6, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;example.com.                   IN      A
+
+;; ANSWER SECTION:
+example.com.            146     IN      A       23.220.75.245
+
+;; Query time: 8 msec
+;; SERVER: 2001:67c:1220:a14::1037#5000(2001:67c:1220:a14::1037) (UDP)
+;; WHEN: Sun Nov 16 19:36:05 CET 2025
+;; MSG SIZE  rcvd: 136
+```
+# Mine
+```bash
+sudo ./dns -s 8.8.8.8 -f testing/example_list.txt -p 5000
+resolver.cpp:75     |    resolve_host | Resolved 8.8.8.8 -> 8.8.8.8:53
+filter.cpp:93       |     filter_load | Filter list updated
+main.cpp:139        |         runtime | Listening on port 5000, upstream "8.8.8.8" socket ready
+main.cpp:171        |         runtime | CLIENT QUERY RECEIVED
+udp.cpp:126         |     udp_receive | Received 52 bytes via UDP.
+dns_parser.cpp:114  |   read_dns_name | parsed DNS name (may be partial): example.com
+dns_parser.cpp:186  |     parse_dns_q | ID: 36191
+dns_parser.cpp:187  |     parse_dns_q | Flags: 288
+dns_parser.cpp:188  |     parse_dns_q | QDCOUNT: 1
+dns_parser.cpp:189  |     parse_dns_q | QNAME: example.com
+dns_parser.cpp:190  |     parse_dns_q | QTYPE: 1
+dns_parser.cpp:191  |     parse_dns_q | QCLASS:1
+dns_parser.cpp:146  |      is_A_query | Query type A
+filter.cpp:125      |      is_blocked |  example.com is allowed.
+main.cpp:95         |   handle_client | Stored mapping id=36191
+udp.cpp:155         |        udp_send | Sent 52 bytes via UDP
+main.cpp:181        |         runtime | REPLY FROM UPSTREAM
+udp.cpp:126         |     udp_receive | Received 136 bytes via UDP.
+main.cpp:117        | handle_upstream | Forwarding reply id=36191 to client
+udp.cpp:155         |        udp_send | Sent 136 bytes via UDP
+```
+###################################################################
+
 - If special library versions are required (available on merlin), note in **documentation & README**.
-
-## Submission Rules
 - Submit `.tar` archive named **xlogin00.tar** via IS VUT (not compressed further).
-- Deadline: **17.11.2025 (hard)**.  
-  – No late submission, email submission, or fixes.
+
 - Archive must include:
   - **Source code** (with author & login in header, file names per assignment).
   - **Makefile** (must build source).
@@ -24,14 +174,11 @@
   - Other required files depending on assignment.
 - Missing features → clearly documented in **manual.pdf** & **README**.
 - Follow Unix conventions, structured modular code, comments, formatting.
-- Program must:
-  - include help/usage info,
-  - handle invalid input with error/help,
-  - never crash (no segfaults, div by zero, etc.).
+
 - Thorough testing required; include results in documentation.
-- External code (tutorials/examples) → mark clearly, cite source & license.
+- External code (tutorials/examples) → mark clearly, cite source & license
 - **Generated code (e.g. ChatGPT)** = plagiarism.
-- Follow Moodle forum for clarifications.
+
 - Before submission: verify names, files, Makefile build on target platform.
 
 ## Grading
@@ -50,9 +197,7 @@
   - plagiarism/shared code: 0 + disciplinary action
 
 ## Testing & Validation Checklist
-- Enable compiler warnings (`-Wall`).
-- Check memory use & initialization (e.g. **valgrind**).
-- Debug program execution.
+
 - Use tools (Wireshark, dig, openssl, etc.) where relevant.
 - Create **repeatable automated tests** (unit, integration, system).
 - Common regex mistakes:
@@ -74,10 +219,6 @@
 - Write program **dns**:
   - Filter **A-type queries** targeting domains from a given blocklist (and their subdomains).
   - Forward all other queries unchanged to a specified resolver.
-  - Forward responses back to the original client.
-  - Must implement DNS message **parsing/building directly in program**.
-  - Only handle **UDP** and **A queries**.
-  - Other query types / blocked queries → reply with appropriate **error message**.
 
 ## Allowed Libraries
 - Sockets, networking (`netinet/*`, `sys/*`, `arpa/*`).
@@ -85,13 +226,7 @@
 - Standard **C (ISO/ANSI, POSIX)** and **C++ STL**.
 - **No other libraries allowed.**
 
-## Program Execution
-- **Usage:**  
-  `dns -s server [-p port] -f filter_file`
-- Parameters (any order):
-  - `-s`: DNS resolver address (IP/domain).
-  - `-p port`: listening port (default: 53).
-  - `-f filter_file`: file with blocked domains.
+
 
 ## Supported Queries
 - Only **A-type queries**.
@@ -108,8 +243,6 @@
   - empty lines,
   - lines starting with `#`.
 - Must handle line endings from Linux, Windows, macOS.
-- Example list:  
-  [Adservers list](https://pgl.yoyo.org/adservers/serverlist.php?hostformat=nohtml&showintro=1)
 
 ## Additional Notes
 - Read common ISA project rules before submission.
@@ -117,14 +250,6 @@
 - Program must handle **invalid input gracefully**.
 - Errors → print to **stderr** clearly.
 - If spec missing details → document chosen solution & rationale.
-- Document:
-  - method for traversing blocked domain list,
-  - generated error messages and conditions.
-- Code: **modular, tested, robust**.
-  - Tests runnable via `make test`.
-  - Follow **robustness principle** (tolerant to small input deviations).
-- Apply previous course practices:
-  - code formatting, comments, file naming, user-friendliness.
 
 ## Reference Environment
 - Program must compile & run on:
@@ -133,9 +258,6 @@
 - Should be portable (Linux, FreeBSD, other architectures/distros/library versions).
 - If requiring minimum library version (available on eva/merlin), state in **documentation & README**.
 
-## Recommended Reading
-- [RFC 1035 – Domain Names](https://datatracker.ietf.org/doc/html/rfc1035)
-
 
 # GOOD TO KNOW
 > ad více dotazů v jedné zprávě DNS: takové zprávy se v praxi nevyskytují, protože není jasná sémantika některých polí v očekávané odpovědi (např. AA, RCODE), vizte atké např. https://stackoverflow.com/questions/4082081/requesting-a-and-aaaa-records-in-single-dns-query/4083071#4083071. Zasílat více dotazů v jedné zprávě při testování nebudu, nicméně v dokumentaci doporučuji vysvětlit, jak se program v takové situaci zachová.
@@ -143,11 +265,9 @@
 > DNS header = 12 bytes
 
 
-
-> Ad komprese jmen: Samozřejmě musíte podporovat, jinak vám program v praxi fungovat nebude správně. Komprese jmen je naprosto běžně používaná technika.
-
 # SOURCES
 - dual stack https://stackoverflow.com/questions/22075363/dual-stack-with-one-socket
 - ipv6, sockaddr_storage https://datatracker.ietf.org/doc/html/rfc2553
 - DNS https://mislove.org/teaching/cs4700/spring11/handouts/project1-primer.pdf
 - DNS https://learn.microsoft.com/en-us/windows-server/networking/dns/message-formats
+- [RFC 1035 – Domain Names](https://datatracker.ietf.org/doc/html/rfc1035)

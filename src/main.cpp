@@ -21,6 +21,7 @@
 #include <limits>
 #include <set>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #include <cstdint>
 #include <unordered_map>
 
