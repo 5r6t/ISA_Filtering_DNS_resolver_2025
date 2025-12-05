@@ -84,3 +84,30 @@ and then client.py. More in [Documentation](manual.pdf).
     ├── test_parse_name.cpp
     └── test.sh
 ```
+
+# Evaluation
+Strohá dokumentace
+Informativní README
+Modulární kód
+S pomocí programu se podařilo úspěšně překládat doménová jména
+Podařilo úspěšně filtrovat domény
+Program se úspěšně vypořádal s promíchanými odpověďmi bez filtrace
+Program se úspěšně vypořádal s promíchanými odpověďmi s filtrací
+Program úspěšně filtruje subdomény
+Úspěšně přeložen 1 dotaz
+Úspěšně přeloženy 4 dotazy
+Úspěšně přeložen 1 nefiltrovaný dotaz
+Úspěšně přeloženy 4 nefiltrované dotazy
+Neúspěšný test bezodpovedi.query.merlin.fit.vutbr.cz
+OK_bezodpovedi.query.kazi.fit.vutbr.cz
+OK_bezodpovedi.query.eva.fit.vutbr.cz
+OK_bezodpovedi.query.www.fit.vutbr.cz
+Neúspěšný test yoyo-bezodpovedi: chyba při zpracování dotazu, který má být filtrovaný
+OK_yoyo-bezodpovedi.query.kazi.fit.vutbr.cz
+OK_yoyo-bezodpovedi.query.eva.fit.vutbr.cz
+OK_yoyo-bezodpovedi.query.www.fit.vutbr.cz
+OK_subdomeny
+Dotaz úspěšně odfiltrován
+Dotaz úspěšně odfiltrován
+Dotaz úspěšně odfiltrován
+Dobrá rychlost programu
