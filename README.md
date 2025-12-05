@@ -85,7 +85,7 @@ and then client.py. More in [Documentation](manual.pdf).
     └── test.sh
 ```
 
-# Evaluation
+# Evaluation (19.5/20 points)
 ```
 Strohá dokumentace
 Informativní README
