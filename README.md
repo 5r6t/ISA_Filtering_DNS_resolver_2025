@@ -86,10 +86,11 @@ and then client.py. More in [Documentation](manual.pdf).
 ```
 
 # Evaluation
+```
 Strohá dokumentace
 Informativní README
 Modulární kód
-S pomocí programu se podařilo úspěšně překládat doménová jména
+S pomocí programu se podařilo úspěšně překládat doménová jmén
 Podařilo úspěšně filtrovat domény
 Program se úspěšně vypořádal s promíchanými odpověďmi bez filtrace
 Program se úspěšně vypořádal s promíchanými odpověďmi s filtrací
@@ -111,3 +112,4 @@ Dotaz úspěšně odfiltrován
 Dotaz úspěšně odfiltrován
 Dotaz úspěšně odfiltrován
 Dobrá rychlost programu
+```
